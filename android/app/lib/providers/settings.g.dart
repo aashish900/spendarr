@@ -78,7 +78,7 @@ final class SettingsProvider
   Settings create() => Settings();
 }
 
-String _$settingsHash() => r'77739df2e4ce2c65302381f39969854838df4920';
+String _$settingsHash() => r'3f1ac7c36f3cc768e424138288ebaa2ec9b1c1a8';
 
 /// Reactive settings, loaded from secure storage on first read.
 

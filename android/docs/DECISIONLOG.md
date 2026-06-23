@@ -139,3 +139,17 @@ Two assumptions, stated for review:
 **Why:** Smallest shippable unit, consistent with the sync deferral — no dead model code or untested contracts. Mapping errors at the client layer (vs. an interceptor that must `reject` a wrapped exception) is simpler to test with one endpoint; revisit interceptor-based mapping at B7 when several endpoints exist.
 
 **Alternatives considered:** Build all models now for a "ready" contract (dead code + tests asserting an unbuilt backend's shape); dio error interceptor mapping (awkward `handler.reject` unwrapping, deferred); store settings via `FlutterSecureStorage` directly in the provider (untestable without platform channels — the `SettingsStore` interface fixes that).
+
+---
+
+## 2026-06-23 — DB-facing Riverpod providers are hand-written, not `@riverpod`
+
+**Context:** B3 introduced providers returning drift's generated row classes — `StreamProvider<List<Category>>`, `StreamProvider<List<TransactionRow>>`. Annotating these with `@riverpod` for `riverpod_generator` fails the build with `InvalidTypeException: The type is invalid and cannot be converted to code`, even on a clean rebuild. `riverpod_generator` and `drift_dev` are separate `source_gen` builders; when riverpod_generator analyzes the provider, drift's generated part (where `Category`/`TransactionRow` are declared) is not yet resolvable, so the return type resolves to `InvalidType`. Providers returning hand-declared types (`AppDatabase`, `AppSettings`, `Dio`, `ApiClient`) are unaffected — `appDatabaseProvider` stays `@riverpod`.
+
+**Decision:** Any provider whose type signature references a drift-generated class is **hand-written** as a plain top-level `StreamProvider`/`Provider`/`FutureProvider` (no `@riverpod`, no part file). Providers that only reference hand-declared types stay on `riverpod_generator`. Both styles coexist; `ref.watch` works across them. Naming matches the codegen convention (`activeCategoriesProvider`, `todayTransactionsProvider`, …) so call sites are identical.
+
+**Why:** A handful of hand-written providers is far simpler than fighting cross-builder ordering with a custom `build.yaml`. This is the common, documented pattern in drift+riverpod projects. Generated providers are kept everywhere they work, preserving the locked-stack intent.
+
+**Consequence for later milestones:** B4 (recurring/categories writes), B5 (summary aggregation over drift), B6 (export query), B8 (retention) will all touch drift row types — those providers must be hand-written too. Reserve `@riverpod` for non-drift providers.
+
+**Alternatives considered:** Custom `build.yaml` to force builder ordering (fragile, poorly supported across versions); wrapper DTO classes mirroring each drift row so `@riverpod` sees hand-declared types (pure boilerplate, defeats drift's codegen); make `appDatabaseProvider` hand-written too (unnecessary — it returns `AppDatabase`, which resolves fine).

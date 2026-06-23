@@ -23,6 +23,18 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
   }
 
+  /// Reactive stream of non-deleted transactions whose [occurredAt] falls in
+  /// `[fromMs, toMs)` (epoch ms, UTC). Newest first.
+  Stream<List<TransactionRow>> watchByOccurredRange(int fromMs, int toMs) {
+    return (select(transactions)
+          ..where((t) =>
+              t.deletedAt.isNull() &
+              t.occurredAt.isBiggerOrEqualValue(fromMs) &
+              t.occurredAt.isSmallerThanValue(toMs))
+          ..orderBy([(t) => OrderingTerm.desc(t.occurredAt)]))
+        .watch();
+  }
+
   Future<void> upsertTransaction(TransactionsCompanion entry) {
     return into(transactions).insertOnConflictUpdate(entry);
   }

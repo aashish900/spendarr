@@ -53,3 +53,20 @@ Scope trimmed for offline-only (sync/summary/domain models deferred — see DECI
 - `android/app/test/providers/settings_test.dart` — 3 tests: load, unconfigured-empty, save-persists-and-refreshes (in-memory fake store).
 - `android/app/test/screens/settings_screen_test.dart` — 4 widget tests: Save persists + snackbar, prefill, Test-connection success/failure snackbars (fake store + fake ApiClient).
 - Gates: `build_runner` clean; `flutter analyze` clean; `flutter test` 23/23 green.
+
+---
+
+## 2026-06-23 — B3: Today + Add transaction screens (local DB only)
+
+- `android/app/lib/db/database_provider.dart` — `appDatabaseProvider` (`@Riverpod(keepAlive: true)`); opens `AppDatabase`, closes on dispose; overridden in tests with `NativeDatabase.memory()`.
+- `android/app/lib/db/daos/transactions_dao.dart` — added `watchByOccurredRange(fromMs, toMs)` (active rows in a UTC ms range, newest first).
+- `android/app/lib/util/money.dart` — `parseAmountToCents` (rejects >2 decimals / negatives / junk) and `formatCents` (two-decimal string). No `double` anywhere.
+- `android/app/lib/providers/categories.dart` — `activeCategoriesProvider` (hand-written `StreamProvider`).
+- `android/app/lib/providers/transactions.dart` — `netFlowCents` (income−expense, investment excluded), `todayUtcBounds`, `todayTransactionsProvider`, `todayNetFlowProvider`, `transactionWriterProvider`. `TransactionWriter.add()` writes the drift row + outbox entry (op=upsert, table=transactions) in one `db.transaction`. Hand-written providers (drift row types — see DECISIONLOG).
+- `android/app/lib/widgets/category_chip.dart` — emoji+name `ActionChip`.
+- `android/app/lib/screens/today_screen.dart` — net flow (red when negative) from local stream; chip grid of categories used today (tap → quick-add `/add?categoryId=`); loading spinner; FAB → `/add`; Settings action.
+- `android/app/lib/screens/add_txn_screen.dart` — amount, kind `SegmentedButton` (default expense), category dropdown (defaults to first / quick-add param), date picker (local noon, default today), note; Save writes via `TransactionWriter` then pops. Inline amount error; "pick a category" guard.
+- `android/app/lib/router.dart` — `/today`→TodayScreen, `/add`→AddTxnScreen (reads `categoryId` query param).
+- `android/app/test/util/money_test.dart` (3), `test/providers/transactions_test.dart` (3: bounds, atomic write, net-flow over insert/delete/investment), `test/screens/add_txn_flow_test.dart` (1: full Add→Today integration through the real router).
+- Gates: `build_runner` clean; `flutter analyze` clean; `flutter test` 30/30 green.
+- Note: widget tests of drift-backed screens use explicit `pump(Duration)` (never `pumpAndSettle` — the loading/saving `CircularProgressIndicator`s animate forever) and unmount + drain at the end to clear drift's stream-coalescing timers.

@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'screens/add_txn_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/today_screen.dart';
 
 /// App routes. Screens are placeholders at B1 — real implementations land in
 /// B2+ (Settings), B3 (Today/Add), B4 (Categories/Recurring), B5 (History).
 final GoRouter appRouter = GoRouter(
   initialLocation: '/today',
   routes: [
-    GoRoute(path: '/today', builder: (_, _) => const _Placeholder('Today')),
-    GoRoute(path: '/add', builder: (_, _) => const _Placeholder('Add')),
+    GoRoute(path: '/today', builder: (_, _) => const TodayScreen()),
+    GoRoute(
+      path: '/add',
+      builder: (_, state) => AddTxnScreen(
+        initialCategoryId: state.uri.queryParameters['categoryId'],
+      ),
+    ),
     GoRoute(
         path: '/history', builder: (_, _) => const _Placeholder('History')),
     GoRoute(

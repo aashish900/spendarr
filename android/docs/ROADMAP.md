@@ -54,7 +54,7 @@ See `CONTEXT.md` for the what; `DECISIONLOG.md` for the why; this file is the ho
 
 ---
 
-### [ ] B3. Add transaction + Today screens (local DB only, no sync)
+### [x] B3. Add transaction + Today screens (local DB only, no sync)
 
 **Files:** `android/app/lib/screens/today_screen.dart`, `android/app/lib/screens/add_txn_screen.dart`, `android/app/lib/providers/transactions.dart`, `android/app/lib/providers/categories.dart`, `android/app/lib/widgets/category_chip.dart`, `android/app/test/screens/`, `android/app/test/providers/`
 
