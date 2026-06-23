@@ -71,7 +71,7 @@ See `CONTEXT.md` for the what; `DECISIONLOG.md` for the why; this file is the ho
 
 ---
 
-### [ ] B4. Categories + Recurring screens (local DB only)
+### [x] B4. Categories + Recurring screens (local DB only)
 
 **Files:** `android/app/lib/screens/categories_screen.dart`, `android/app/lib/screens/recurring_screen.dart`, `android/app/lib/screens/add_category_screen.dart`, `android/app/lib/screens/add_recurring_screen.dart`, `android/app/lib/providers/recurring.dart`, `android/app/test/screens/`, `android/app/test/providers/`
 

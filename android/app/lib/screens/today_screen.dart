@@ -28,6 +28,7 @@ class TodayScreen extends ConsumerWidget {
           ),
         ],
       ),
+      drawer: const _NavDrawer(),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/add'),
         child: const Icon(Icons.add),
@@ -84,6 +85,36 @@ class TodayScreen extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Primary-section navigation. A full bottom-nav/shell can replace this once
+/// History (B5) lands; for now it makes every section reachable on-device.
+class _NavDrawer extends StatelessWidget {
+  const _NavDrawer();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget item(IconData icon, String label, String route) => ListTile(
+          leading: Icon(icon),
+          title: Text(label),
+          onTap: () {
+            Navigator.of(context).pop(); // close drawer
+            context.push(route);
+          },
+        );
+
+    return Drawer(
+      child: ListView(
+        children: [
+          const DrawerHeader(child: Center(child: Text('spendarr'))),
+          item(Icons.history, 'History', '/history'),
+          item(Icons.category_outlined, 'Categories', '/categories'),
+          item(Icons.repeat, 'Recurring', '/recurring'),
+          item(Icons.settings, 'Settings', '/settings'),
+        ],
       ),
     );
   }

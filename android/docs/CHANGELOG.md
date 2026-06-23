@@ -70,3 +70,19 @@ Scope trimmed for offline-only (sync/summary/domain models deferred — see DECI
 - `android/app/test/util/money_test.dart` (3), `test/providers/transactions_test.dart` (3: bounds, atomic write, net-flow over insert/delete/investment), `test/screens/add_txn_flow_test.dart` (1: full Add→Today integration through the real router).
 - Gates: `build_runner` clean; `flutter analyze` clean; `flutter test` 30/30 green.
 - Note: widget tests of drift-backed screens use explicit `pump(Duration)` (never `pumpAndSettle` — the loading/saving `CircularProgressIndicator`s animate forever) and unmount + drain at the end to clear drift's stream-coalescing timers.
+
+---
+
+## 2026-06-23 — B4: Categories + Recurring screens (local DB only)
+
+- `android/app/lib/db/daos/categories_dao.dart` — `archiveCategory` now bumps `updatedAt` alongside `deletedAt`.
+- `android/app/lib/db/daos/recurring_dao.dart` — `setActive` now requires `updatedAt`; added `activeRules()` (Future snapshot, for widget tests where a `watch().first` would hang under the fake clock).
+- `android/app/lib/util/cron.dart` — `RecurrencePreset`, `cronForPreset` (daily `0 0 * * *` / weekly `0 0 * * 1` / monthly `0 0 1 * *` / custom), `isValidCron` (5-field check), `nextRunAtMs` (best-effort display hint).
+- `android/app/lib/providers/categories.dart` — added `CategoryWriter` (`add`, `archive`) + `categoryWriterProvider`; drift row + outbox in one transaction. Outbox op: upsert for add, delete for archive.
+- `android/app/lib/providers/recurring.dart` — `activeRecurringProvider`, `RecurringWriter` (`add`, `setActive`) + `recurringWriterProvider`. Pause/resume is an upsert.
+- `android/app/lib/screens/categories_screen.dart` + `add_category_screen.dart` — list with archive action + kind label; add screen with quick-pick emoji row, name, kind.
+- `android/app/lib/screens/recurring_screen.dart` + `add_recurring_screen.dart` — list joined with category (emoji/name), amount, next-run, pause/resume `Switch`; add screen with category dropdown, amount, kind, recurrence preset (+ custom cron field), note.
+- `android/app/lib/screens/today_screen.dart` — added a temporary nav `Drawer` (History/Categories/Recurring/Settings) so sections are reachable on-device. Full bottom-nav deferred to B5.
+- `android/app/lib/router.dart` — `/categories`, `/categories/add`, `/recurring`, `/recurring/add` now route to real screens.
+- Tests: `test/util/cron_test.dart` (7), `test/providers/category_writer_test.dart` (2: add+outbox, archive+outbox-delete), `test/providers/recurring_writer_test.dart` (2: add, pause), `test/screens/categories_flow_test.dart` (1: add→list→archive), `test/screens/recurring_flow_test.dart` (1: add→list→pause). Updated B1 `dao_test` for the new `setActive` signature.
+- Gates: `flutter analyze` clean; `flutter test` 43/43 green (run with `--timeout 90s` as a hang guard).

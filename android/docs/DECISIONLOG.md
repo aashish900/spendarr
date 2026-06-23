@@ -153,3 +153,19 @@ Two assumptions, stated for review:
 **Consequence for later milestones:** B4 (recurring/categories writes), B5 (summary aggregation over drift), B6 (export query), B8 (retention) will all touch drift row types — those providers must be hand-written too. Reserve `@riverpod` for non-drift providers.
 
 **Alternatives considered:** Custom `build.yaml` to force builder ordering (fragile, poorly supported across versions); wrapper DTO classes mirroring each drift row so `@riverpod` sees hand-declared types (pure boilerplate, defeats drift's codegen); make `appDatabaseProvider` hand-written too (unnecessary — it returns `AppDatabase`, which resolves fine).
+
+---
+
+## 2026-06-23 — B4: outbox-op convention + temporary nav Drawer
+
+**Context:** B4 added create/archive for categories and create/pause-resume for recurring rules. Each mutation must enqueue an outbox row (the forward sync contract), and the four primary screens needed an on-device entry point.
+
+**Decision:**
+- **Outbox op convention:** `OutboxOp.upsert` for create **and** update (including recurring pause/resume — a paused rule is an updated row, not a deleted one); `OutboxOp.delete` for archive (soft-delete). Every mutation bumps `updatedAt` to the mutation instant for later LWW; archive sets `deletedAt == updatedAt`. To support this, the B1 DAO methods `archiveCategory` (now also writes `updatedAt`) and `setActive` (now requires `updatedAt`) were tightened.
+- **Writers mirror `TransactionWriter`:** `CategoryWriter` and `RecurringWriter` write the drift row + outbox entry in a single `db.transaction`. Hand-written providers (drift row types — see prior ADR).
+- **Recurrence is store-only:** presets map to 5-field cron strings (`util/cron.dart`); `nextRunAt` is a best-effort display hint. Nothing executes rules in v1 — no milestone builds a recurrence scheduler, so stored rules never generate transactions yet.
+- **Temporary nav Drawer** on the Today screen links History/Categories/Recurring/Settings. A proper bottom-nav/`StatefulShellRoute` is deferred until History (B5) completes the four primary sections, to avoid restructuring routing twice.
+
+**Why:** `upsert`-for-update keeps the sync contract a simple last-writer-wins upsert; reserving `delete` strictly for soft-deletes maps cleanly to the server tombstone path. The Drawer unblocks B4's on-device "full CRUD flow" done-condition without committing to a navigation structure mid-stream.
+
+**Alternatives considered:** `delete` op for pause (wrong — the rule still exists); a full bottom-nav shell now (premature — re-work once History lands); a real cron parser for `nextRunAt` (out of scope — no scheduler consumes it in v1).

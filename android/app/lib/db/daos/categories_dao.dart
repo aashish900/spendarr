@@ -25,9 +25,14 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
     return into(categories).insertOnConflictUpdate(entry);
   }
 
-  /// Soft-delete (archive): sets [deletedAt]; row is retained for sync.
+  /// Soft-delete (archive): sets [deletedAt] and bumps `updatedAt` to the same
+  /// instant (for LWW sync). Row is retained as a tombstone.
   Future<void> archiveCategory(String id, {required int deletedAt}) {
-    return (update(categories)..where((c) => c.id.equals(id)))
-        .write(CategoriesCompanion(deletedAt: Value(deletedAt)));
+    return (update(categories)..where((c) => c.id.equals(id))).write(
+      CategoriesCompanion(
+        deletedAt: Value(deletedAt),
+        updatedAt: Value(deletedAt),
+      ),
+    );
   }
 }

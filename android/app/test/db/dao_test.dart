@@ -98,7 +98,7 @@ void main() {
 
     test('setActive(false) pauses the rule', () async {
       await db.recurringDao.upsertRule(rule('r1'));
-      await db.recurringDao.setActive('r1', false);
+      await db.recurringDao.setActive('r1', false, updatedAt: now());
 
       final row = await db.recurringDao.ruleById('r1');
       expect(row!.active, isFalse);

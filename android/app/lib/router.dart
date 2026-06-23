@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'screens/add_category_screen.dart';
+import 'screens/add_recurring_screen.dart';
 import 'screens/add_txn_screen.dart';
+import 'screens/categories_screen.dart';
+import 'screens/recurring_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/today_screen.dart';
 
@@ -20,13 +24,15 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/history', builder: (_, _) => const _Placeholder('History')),
     GoRoute(
-        path: '/categories',
-        builder: (_, _) => const _Placeholder('Categories')),
+        path: '/categories', builder: (_, _) => const CategoriesScreen()),
     GoRoute(
-        path: '/recurring',
-        builder: (_, _) => const _Placeholder('Recurring')),
+        path: '/categories/add',
+        builder: (_, _) => const AddCategoryScreen()),
+    GoRoute(path: '/recurring', builder: (_, _) => const RecurringScreen()),
     GoRoute(
-        path: '/settings', builder: (_, _) => const SettingsScreen()),
+        path: '/recurring/add',
+        builder: (_, _) => const AddRecurringScreen()),
+    GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
   ],
 );
 
