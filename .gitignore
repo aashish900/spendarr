@@ -32,3 +32,53 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.python-version
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Flutter / Dart (Phase 2)
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+*.iml
+.idea/
+
+# Editors / OS
+.vscode/
+*.swp
+.DS_Store
+
+# Graphify
+graphify-out/
+android/graphify-out/
+backend/graphify-out/
+*graphify-out/
+
+# Claude
+*.claude/
+
+# Local smoke-test working doc — never committed (any directory)
+SMOKE-TEST.md
+**/SMOKE-TEST.md
+*SMOKE-TEST.md
