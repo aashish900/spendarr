@@ -125,3 +125,8 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+
+# Skills
+- **ctx** (`~/.claude-personal/skills/ctx/SKILL.md`) - session bootstrap: reads CONTEXT.md, DECISIONLOG.md, ROADMAP.md, DEBT.md if present. Trigger: `/ctx`
+When the user types `/ctx`, invoke the Skill tool with `skill: "ctx"` before doing anything else.
