@@ -19,3 +19,19 @@ Append-only per-task change log. Format: `## YYYY-MM-DD — <one-line summary>` 
 - `android/docs/DECISIONLOG.md` — appended ADR: sync engine deferred; ships offline-only; outbox table retained in schema; B8 trigger changed to foreground-only; settings screen drops "Sync now".
 - `android/docs/ROADMAP.md` — B7 marked `[DEFERRED]` with forward note; B8 sweep/watcher trigger updated to foreground-only; C1 smoke test stripped of sync steps.
 - `android/docs/CONTEXT.md` — sync engine section replaced with deferred notice; settings screen description updated; `connectivity_plus` marked deferred.
+
+---
+
+## 2026-06-23 — B1: scaffold + drift schema + DAOs
+
+- `android/app/` — `flutter create` Android-only scaffold (`--org com.aashish --project-name spendarr --empty`); app id `com.aashish.spendarr`. Flutter 3.44.0 / Dart 3.12.0.
+- `android/app/pubspec.yaml` — added B1 deps: `flutter_riverpod`, `riverpod_annotation`, `drift`, `drift_flutter`, `go_router`, `uuid`; dev: `build_runner`, `drift_dev`, `riverpod_generator`. Versions pinned via `pubspec.lock`.
+- `android/app/lib/db/tables.dart` — drift tables: `Categories`, `Transactions` (amount INTEGER cents), `RecurringRules`, `OutboxEntries` (SQL name `outbox`), `SyncMetaEntries` (SQL name `sync_meta`). Enums `TransactionKind`, `TransactionSource`, `OutboxOp` via `textEnum`. Synced tables carry `id` (UUID PK), `createdAt`/`updatedAt`/`deletedAt` (epoch ms). No FK constraints.
+- `android/app/lib/db/database.dart` — `AppDatabase` (`@DriftDatabase`, schemaVersion 1) with injectable `QueryExecutor` for in-memory test DBs; on-device path via `drift_flutter`.
+- `android/app/lib/db/daos/` — `CategoriesDao`, `TransactionsDao`, `RecurringDao`, `OutboxDao`, `SyncMetaDao`: reactive `watch*` streams (filter `deletedAt IS NULL`), upsert, soft-delete/archive, outbox enqueue/queue/remove, syncMeta put/getValue.
+- `android/app/lib/theme.dart` — Material 3 dark theme, seed `0xFF7C4DFF` (deep violet, distinct from heerr green).
+- `android/app/lib/router.dart` — go_router with 6 routes (`/today` initial, `/add`, `/history`, `/categories`, `/recurring`, `/settings`); placeholder screens.
+- `android/app/lib/main.dart` — `ProviderScope` + `MaterialApp.router`.
+- `android/app/test/db/dao_test.dart` — 9 DAO unit tests (B1 gate): insert→stream emits, soft-delete/archive sets `deletedAt` + filters, outbox FIFO enqueue/remove, syncMeta round-trip, recurring pause. All green.
+- `android/app/lib/db/**/*.g.dart` — committed drift codegen output.
+- Gates: `dart run build_runner build` clean; `flutter analyze` clean; `flutter test` 9/9 green.

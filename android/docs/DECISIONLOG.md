@@ -95,3 +95,22 @@ Consequences:
 **Why:** Reduce scope to the smallest shippable unit. Offline-only is useful on its own (local expense tracking + CSV export). Sync can be layered on once backend endpoints are stable and testable.
 
 **Alternatives considered:** Ship sync as planned (increases risk of building against an unstable backend contract); stub sync with no-ops (adds dead code with no value); remove the outbox table entirely (would require a schema migration when sync is added — rejected to keep the future migration simple).
+
+---
+
+## 2026-06-23 — B1: theme seed colour, no local FK constraints, commit generated code
+
+**Context:** B1 scaffold decisions that need a record.
+
+**Decision:**
+- **Seed colour `0xFF7C4DFF` (deep violet).** Material 3 dark scheme via `ColorScheme.fromSeed(seedColor: 0xFF7C4DFF, brightness: dark)`. Defined as `kSeedColor` in `lib/theme.dart`.
+- **No foreign-key constraints in the drift schema.** `transactions.categoryId` and `recurringRules.categoryId` reference categories by UUID but are not enforced FKs.
+- **Generated `*.g.dart` files are committed** to the repo (drift + riverpod output), rather than gitignored and regenerated.
+- **`build_runner` invocation:** the installed build_runner ignores `--delete-conflicting-outputs` (now default). Command is still documented with the flag for compatibility; it is a harmless no-op warning.
+
+**Why:**
+- Violet is unmistakably distinct from heerr's green at a glance — the two apps are visually separable on-device. ROADMAP B1 required documenting the choice.
+- Server is source of truth on sync (B7, deferred). Sync pulls may arrive out of order (a transaction before its category); enforcing FKs locally would reject valid out-of-order upserts. Soft-delete + LWW semantics make local referential enforcement the wrong layer.
+- Committing generated code lets a fresh clone run `flutter test` without first running `build_runner`, and removes a CI ordering dependency. Trade-off: larger diffs on schema changes — acceptable for a solo project.
+
+**Alternatives considered:** Teal seed (too close to green — rejected); enforce FKs with `PRAGMA foreign_keys` (breaks out-of-order sync upserts); gitignore `*.g.dart` and regenerate in CI (fragile fresh-clone test runs).

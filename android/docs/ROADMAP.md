@@ -16,7 +16,7 @@ See `CONTEXT.md` for the what; `DECISIONLOG.md` for the why; this file is the ho
 
 ## Phase B — Foundation & local-only core
 
-### [ ] B1. Scaffold: flutter create + pinned deps + drift schema + DAOs
+### [x] B1. Scaffold: flutter create + pinned deps + drift schema + DAOs
 
 **Files:** `android/app/pubspec.yaml`, `android/app/analysis_options.yaml`, `android/app/lib/main.dart`, `android/app/lib/theme.dart`, `android/app/lib/router.dart`, `android/app/lib/db/database.dart`, `android/app/lib/db/daos/`, `android/app/test/db/dao_test.dart`
 
