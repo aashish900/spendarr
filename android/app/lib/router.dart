@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'screens/settings_screen.dart';
+
 /// App routes. Screens are placeholders at B1 — real implementations land in
 /// B2+ (Settings), B3 (Today/Add), B4 (Categories/Recurring), B5 (History).
 final GoRouter appRouter = GoRouter(
@@ -17,7 +19,7 @@ final GoRouter appRouter = GoRouter(
         path: '/recurring',
         builder: (_, _) => const _Placeholder('Recurring')),
     GoRoute(
-        path: '/settings', builder: (_, _) => const _Placeholder('Settings')),
+        path: '/settings', builder: (_, _) => const SettingsScreen()),
   ],
 );
 

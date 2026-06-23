@@ -114,3 +114,28 @@ Consequences:
 - Committing generated code lets a fresh clone run `flutter test` without first running `build_runner`, and removes a CI ordering dependency. Trade-off: larger diffs on schema changes — acceptable for a solo project.
 
 **Alternatives considered:** Teal seed (too close to green — rejected); enforce FKs with `PRAGMA foreign_keys` (breaks out-of-order sync upserts); gitignore `*.g.dart` and regenerate in CI (fragile fresh-clone test runs).
+
+---
+
+## 2026-06-23 — B2 trimmed to the live network surface; ApiError mapped at the client layer
+
+**Context:** B2 as originally specced assumed sync existed — it called for the full freezed model set (`SyncPushItem`/`SyncPushAck`/`SyncPullResponse`, `SummaryResponse`, and `CategoryModel`/`TransactionModel`/`RecurringRuleModel`). With sync deferred (B7), the only live network call is `/health` for the Settings "Test connection" button. The offline UI reads drift row classes directly, so none of those models have a consumer yet.
+
+**Decision:** Build only the live surface in B2:
+- `dio` client (base URL from `settingsProvider` + bearer interceptor),
+- typed `ApiError` (`unauthorized | forbidden | unprocessable | network | server | unknown`),
+- `Endpoints.health` (`/api/v1/health`),
+- `settingsProvider` (Riverpod `AsyncNotifier`) backed by a `SettingsStore` interface; `SecureSettingsStore` uses `flutter_secure_storage`,
+- Settings screen (URL + token + Save + Test connection).
+
+Deferred to the milestone that consumes them: `SummaryResponse` → B5; sync envelopes + domain models → B7. `freezed`/`json_serializable` are **not** added until then (`ApiError` and `AppSettings` are hand-written plain classes — they carry no JSON).
+
+`ApiError` mapping lives at the **client method layer** (`DioApiClient.health` catches `DioException` → throws `ApiError`), not in a dio error interceptor. The `ApiClient` is an interface so widget tests inject a fake.
+
+Two assumptions, stated for review:
+1. `/health` is under `/api/v1` (`/api/v1/health`), per CONTEXT.md's "endpoints under /api/v1" grouping. The backend (A1–A4) is unbuilt, so this is the contract we're asserting — adjust if the backend lands it at root `/health`.
+2. The bearer token is sent on `/health` too (interceptor is unconditional); the endpoint is expected to ignore it.
+
+**Why:** Smallest shippable unit, consistent with the sync deferral — no dead model code or untested contracts. Mapping errors at the client layer (vs. an interceptor that must `reject` a wrapped exception) is simpler to test with one endpoint; revisit interceptor-based mapping at B7 when several endpoints exist.
+
+**Alternatives considered:** Build all models now for a "ready" contract (dead code + tests asserting an unbuilt backend's shape); dio error interceptor mapping (awkward `handler.reject` unwrapping, deferred); store settings via `FlutterSecureStorage` directly in the provider (untestable without platform channels — the `SettingsStore` interface fixes that).

@@ -34,7 +34,9 @@ See `CONTEXT.md` for the what; `DECISIONLOG.md` for the why; this file is the ho
 
 ---
 
-### [ ] B2. Freezed models + API client + settings screen
+### [x] B2. Freezed models + API client + settings screen
+
+> **Trimmed for offline-only — see DECISIONLOG 2026-06-23.** Built: dio client + bearer interceptor + typed `ApiError` + `/health` + `settingsProvider` (secure storage) + Settings screen. Deferred to their consuming milestones: `SummaryResponse` (B5); sync envelopes + `CategoryModel`/`TransactionModel`/`RecurringRuleModel` (B7). `freezed`/`json_serializable` not yet added.
 
 **Files:** `android/app/lib/models/*.dart`, `android/app/lib/api/client.dart`, `android/app/lib/api/api_error.dart`, `android/app/lib/api/endpoints.dart`, `android/app/lib/providers/settings.dart`, `android/app/lib/screens/settings_screen.dart`, `android/app/test/models/`, `android/app/test/api/client_test.dart`, `android/app/test/screens/settings_screen_test.dart`
 

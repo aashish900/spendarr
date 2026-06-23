@@ -35,3 +35,21 @@ Append-only per-task change log. Format: `## YYYY-MM-DD — <one-line summary>` 
 - `android/app/test/db/dao_test.dart` — 9 DAO unit tests (B1 gate): insert→stream emits, soft-delete/archive sets `deletedAt` + filters, outbox FIFO enqueue/remove, syncMeta round-trip, recurring pause. All green.
 - `android/app/lib/db/**/*.g.dart` — committed drift codegen output.
 - Gates: `dart run build_runner build` clean; `flutter analyze` clean; `flutter test` 9/9 green.
+
+---
+
+## 2026-06-23 — B2 (trimmed): dio client + ApiError + Settings screen
+
+Scope trimmed for offline-only (sync/summary/domain models deferred — see DECISIONLOG).
+
+- `android/app/pubspec.yaml` — added `dio`, `flutter_secure_storage`; dev `http_mock_adapter`.
+- `android/app/lib/api/api_error.dart` — typed `ApiError` + `ApiErrorKind` (unauthorized/forbidden/unprocessable/network/server/unknown); `ApiError.fromDio` maps status codes + extracts `detail` envelope. Hand-written (no JSON/freezed).
+- `android/app/lib/api/endpoints.dart` — `Endpoints.health` = `/api/v1/health` (only live endpoint).
+- `android/app/lib/api/client.dart` — `dioProvider` (base URL from settings + bearer interceptor, rebuilds on settings change); `ApiClient` interface + `DioApiClient.health()` (maps `DioException`→`ApiError` at call site); `apiClientProvider`.
+- `android/app/lib/providers/settings.dart` — `AppSettings` value class; `SettingsStore` interface; `SecureSettingsStore` (flutter_secure_storage, keys `backend_base_url`/`bearer_token`); `settingsStoreProvider`; `Settings` AsyncNotifier with `save()`.
+- `android/app/lib/screens/settings_screen.dart` — URL + token (obscured) fields, Save, Test connection (calls `/health`, success/failure snackbars); prefills from stored settings.
+- `android/app/lib/router.dart` — `/settings` now routes to real `SettingsScreen`.
+- `android/app/test/api/client_test.dart` — 7 tests: 200 happy + 401/403/422/500/418 + no-response network mapping.
+- `android/app/test/providers/settings_test.dart` — 3 tests: load, unconfigured-empty, save-persists-and-refreshes (in-memory fake store).
+- `android/app/test/screens/settings_screen_test.dart` — 4 widget tests: Save persists + snackbar, prefill, Test-connection success/failure snackbars (fake store + fake ApiClient).
+- Gates: `build_runner` clean; `flutter analyze` clean; `flutter test` 23/23 green.
