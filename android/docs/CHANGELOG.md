@@ -86,3 +86,17 @@ Scope trimmed for offline-only (sync/summary/domain models deferred — see DECI
 - `android/app/lib/router.dart` — `/categories`, `/categories/add`, `/recurring`, `/recurring/add` now route to real screens.
 - Tests: `test/util/cron_test.dart` (7), `test/providers/category_writer_test.dart` (2: add+outbox, archive+outbox-delete), `test/providers/recurring_writer_test.dart` (2: add, pause), `test/screens/categories_flow_test.dart` (1: add→list→archive), `test/screens/recurring_flow_test.dart` (1: add→list→pause). Updated B1 `dao_test` for the new `setActive` signature.
 - Gates: `flutter analyze` clean; `flutter test` 43/43 green (run with `--timeout 90s` as a hang guard).
+
+---
+
+## 2026-06-23 — B5 (trimmed): History screen with local aggregation
+
+Scope trimmed for offline-only (online `/summary` + fallback deferred to B7 — see DECISIONLOG).
+
+- `android/app/pubspec.yaml` — added `fl_chart`.
+- `android/app/lib/providers/summary.dart` — `HistoryPeriod` enum; `rangeForPeriod` (day/week[Mon-start]/month → UTC ms windows); `SpendByCategory` + `aggregateSpendByCategory` (expense-only, joined, sorted desc); `transactionsInRangeProvider` (`StreamProvider.family` keyed by `(int,int)` range record, reuses `watchByOccurredRange`).
+- `android/app/lib/widgets/spend_bar_chart.dart` — `fl_chart` bar chart of spend per category (cents→double for pixel height only).
+- `android/app/lib/screens/history_screen.dart` — period `SegmentedButton`, custom date-range picker, chart + categorised transaction list (signed amounts, colored by kind), empty state.
+- `android/app/lib/router.dart` — `/history` → `HistoryScreen`; removed the now-unused `_Placeholder` widget (all primary routes are real screens) and the redundant material import.
+- Tests: `test/providers/summary_test.dart` (7: range day/week/month, aggregation incl. exclusions/unknown/empty, and a seeded-drift day/week/month window check) + `test/screens/history_screen_test.dart` (2: empty state, chart+list render and re-render on period toggle).
+- Gates: `flutter analyze` clean; `flutter test` 52/52 green (`--timeout 90s` hang guard).

@@ -58,7 +58,7 @@ Tables: `categories`, `transactions`, `recurringRules`, plus `outbox` and `syncM
 
 - **Today** — net flow + emoji-chip category grid; tap chip → quick-add transaction
 - **Add transaction** — amount, category (emoji picker), date (default today), note, kind
-- **History** — toggle Day / Week / Month; bar chart + categorised list; date range picker. Online → `/summary`; offline → local drift aggregation
+- **History** — toggle Day / Week / Month; bar chart + categorised list; date range picker. Local drift aggregation (expense spend by category). Online `/summary` path deferred with B7 (see DECISIONLOG 2026-06-23)
 - **Categories** — list, add (emoji + name + kind), archive
 - **Recurring** — list rules, add/edit (cron-ish picker), pause/resume
 - **Export** — date-range picker, row count preview, "Export CSV" → OS share sheet. Columns: `date, amount, kind, category, note, source, recurring_rule_id`

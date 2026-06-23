@@ -1,16 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'screens/add_category_screen.dart';
 import 'screens/add_recurring_screen.dart';
 import 'screens/add_txn_screen.dart';
 import 'screens/categories_screen.dart';
+import 'screens/history_screen.dart';
 import 'screens/recurring_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/today_screen.dart';
 
-/// App routes. Screens are placeholders at B1 — real implementations land in
-/// B2+ (Settings), B3 (Today/Add), B4 (Categories/Recurring), B5 (History).
+/// App routes. All primary screens are implemented (B2–B5).
 final GoRouter appRouter = GoRouter(
   initialLocation: '/today',
   routes: [
@@ -21,8 +20,7 @@ final GoRouter appRouter = GoRouter(
         initialCategoryId: state.uri.queryParameters['categoryId'],
       ),
     ),
-    GoRoute(
-        path: '/history', builder: (_, _) => const _Placeholder('History')),
+    GoRoute(path: '/history', builder: (_, _) => const HistoryScreen()),
     GoRoute(
         path: '/categories', builder: (_, _) => const CategoriesScreen()),
     GoRoute(
@@ -35,18 +33,3 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
   ],
 );
-
-/// Temporary stand-in until each screen is built in its milestone.
-class _Placeholder extends StatelessWidget {
-  const _Placeholder(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(label)),
-      body: Center(child: Text('$label screen — coming soon')),
-    );
-  }
-}

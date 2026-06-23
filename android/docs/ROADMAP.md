@@ -87,7 +87,9 @@ See `CONTEXT.md` for the what; `DECISIONLOG.md` for the why; this file is the ho
 
 ---
 
-### [ ] B5. History screen with local aggregation
+### [x] B5. History screen with local aggregation
+
+> **Trimmed for offline-only — see DECISIONLOG 2026-06-23.** Built: local drift aggregation (day/week/month + custom range), `fl_chart` bar chart, transaction list, empty state. Deferred to B7: `SummaryResponse`, `/summary` call, online→local fallback.
 
 **Files:** `android/app/lib/screens/history_screen.dart`, `android/app/lib/providers/summary.dart`, `android/app/lib/widgets/spend_bar_chart.dart`, `android/app/test/screens/history_screen_test.dart`, `android/app/test/providers/summary_test.dart`
 

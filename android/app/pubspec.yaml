@@ -10,6 +10,7 @@ dependencies:
   dio: ^5.9.2
   drift: ^2.34.0
   drift_flutter: ^0.3.0
+  fl_chart: ^1.2.0
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.3.2

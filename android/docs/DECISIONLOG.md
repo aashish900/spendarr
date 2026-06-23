@@ -169,3 +169,28 @@ Two assumptions, stated for review:
 **Why:** `upsert`-for-update keeps the sync contract a simple last-writer-wins upsert; reserving `delete` strictly for soft-deletes maps cleanly to the server tombstone path. The Drawer unblocks B4's on-device "full CRUD flow" done-condition without committing to a navigation structure mid-stream.
 
 **Alternatives considered:** `delete` op for pause (wrong — the rule still exists); a full bottom-nav shell now (premature — re-work once History lands); a real cron parser for `nextRunAt` (out of scope — no scheduler consumes it in v1).
+
+---
+
+## 2026-06-23 — B5 trimmed to local aggregation; online /summary deferred
+
+**Context:** B5's History screen was specced to read from `/summary` online with a local-drift fallback. In offline-only mode (sync deferred, B7) the server holds no data until push exists, so the online path can return nothing useful and its network-fallback branch can't be exercised against real data. Same situation as the B2 trim.
+
+**Decision:** Build History with **local drift aggregation only**:
+- `rangeForPeriod(day|week|month)` → UTC ms windows (week starts Monday);
+- `aggregateSpendByCategory` (pure) — **expense**-only totals per category, joined + sorted desc;
+- `transactionsInRangeProvider` — `StreamProvider.family` keyed by a `(int,int)` range record (records give value-equality keys), reusing the existing `watchByOccurredRange` DAO query;
+- `HistoryScreen` (period toggle + custom date-range picker, `fl_chart` bar chart, transaction list, empty state);
+- `SpendBarChart` (`fl_chart`).
+
+Deferred to B7: `SummaryResponse` model, `Endpoints.summary` + client call, and the online→local fallback. `freezed`/`json_serializable` still not added.
+
+Two scoping notes:
+- **History is expense-focused.** "Spend by category" aggregates expenses only; income/investment are excluded from the chart but still appear in the transaction list (signed `+`/`-`).
+- **`fl_chart` Y values use `double`** (cents/100) — this is render-only pixel height, not money math; the no-`double`-for-amounts rule is about storage/transfer/compare and is unaffected.
+
+**Why:** Smallest shippable unit, consistent with the offline-only direction and the B2 precedent — no dead network code, no test asserting an unbuilt server's behavior. Local aggregation is the real path users hit in v1.
+
+**Routing:** All six primary routes now resolve to real screens; the `_Placeholder` widget was removed. The temporary Today `Drawer` remains the nav surface; a bottom-nav/`StatefulShellRoute` can now replace it as a focused follow-up (all four sections exist).
+
+**Alternatives considered:** Build the online path now (dead code; fallback untestable without server data); aggregate all kinds into the chart (muddies "spend"); a family key class instead of a record (records already give value equality — simpler).
