@@ -194,3 +194,22 @@ Two scoping notes:
 **Routing:** All six primary routes now resolve to real screens; the `_Placeholder` widget was removed. The temporary Today `Drawer` remains the nav surface; a bottom-nav/`StatefulShellRoute` can now replace it as a focused follow-up (all four sections exist).
 
 **Alternatives considered:** Build the online path now (dead code; fallback untestable without server data); aggregate all kinds into the chart (muddies "spend"); a family key class instead of a record (records already give value equality — simpler).
+
+---
+
+## 2026-06-23 — B6: CSV export design (pure builder + injected IO/share)
+
+**Context:** B6 exports transactions to CSV and hands off via the OS share sheet. The CSV content must be unit-testable without `path_provider`/`share_plus` platform channels.
+
+**Decision:**
+- **Split pure generation from IO.** `ExportService.buildCsv({fromMs, toMs})` queries drift and returns a `String` (no file IO) — this is what the gate tests assert against. `exportToCsv({cacheDir, …})` writes the timestamped file. The service takes only the db.
+- **Inject platform edges as providers:** `cacheDirProvider` (`FutureProvider<Directory>` over `getApplicationCacheDirectory`) and `fileSharerProvider` (`FileSharer` interface; `PlatformFileSharer` uses `SharePlus.instance.share(ShareParams(files:[XFile]))`). Tests override both with a temp dir + a recording fake — no platform channel.
+- **CSV format:** fixed columns `date,amount,kind,category,note,source,recurring_rule_id`. `date` = **local** `YYYY-MM-DD` of `occurred_at`; `amount` = unsigned decimal string via `formatCents` (sign is implied by the separate `kind` column); RFC-4180 escaping (quote fields with `, " CR LF`, double embedded quotes). Rows oldest-first.
+- **Category names resolved from ALL categories (incl. archived)** via new `CategoriesDao.allCategories()` — a transaction may reference a since-archived category. New `TransactionsDao.activeTransactions()` / `transactionsInRange()` Futures back the export (oldest-first).
+- **Entry points:** History AppBar icon + a Settings row, both → `/export`.
+
+**Why:** The pure-builder split makes every gate assertion (columns, amount formatting, soft-delete exclusion, category resolution, range filter, escaping) a fast string test. Injected IO/share keeps the screen testable.
+
+**Test note:** the Export screen test wraps the tap in `tester.runAsync` — `File.writeAsString` is real filesystem IO that the fake test clock does not advance.
+
+**Alternatives considered:** `ExportService` calling `path_provider`/`share_plus` directly (untestable without platform); a CSV package dependency (the format is trivial — a hand-rolled RFC-4180 escaper avoids a dep); UTC ISO timestamp for `date` (the column models a calendar day; local `YYYY-MM-DD` matches History and user expectation).

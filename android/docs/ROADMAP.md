@@ -107,7 +107,7 @@ See `CONTEXT.md` for the what; `DECISIONLOG.md` for the why; this file is the ho
 
 ## Phase C — Export & retention
 
-### [ ] B6. CSV export (ExportService + share sheet)
+### [x] B6. CSV export (ExportService + share sheet)
 
 **Files:** `android/app/lib/services/export_service.dart`, `android/app/lib/screens/export_screen.dart`, `android/app/lib/providers/export.dart`, `android/app/test/services/export_service_test.dart`, `android/app/test/screens/export_screen_test.dart`
 

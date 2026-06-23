@@ -4,6 +4,7 @@ import 'screens/add_category_screen.dart';
 import 'screens/add_recurring_screen.dart';
 import 'screens/add_txn_screen.dart';
 import 'screens/categories_screen.dart';
+import 'screens/export_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/recurring_screen.dart';
 import 'screens/settings_screen.dart';
@@ -30,6 +31,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
         path: '/recurring/add',
         builder: (_, _) => const AddRecurringScreen()),
+    GoRoute(path: '/export', builder: (_, _) => const ExportScreen()),
     GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
   ],
 );

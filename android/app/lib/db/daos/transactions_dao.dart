@@ -35,6 +35,27 @@ class TransactionsDao extends DatabaseAccessor<AppDatabase>
         .watch();
   }
 
+  /// One-shot snapshot of all non-deleted transactions, oldest first
+  /// (chronological — for CSV export).
+  Future<List<TransactionRow>> activeTransactions() {
+    return (select(transactions)
+          ..where((t) => t.deletedAt.isNull())
+          ..orderBy([(t) => OrderingTerm.asc(t.occurredAt)]))
+        .get();
+  }
+
+  /// One-shot snapshot of non-deleted transactions in `[fromMs, toMs)`,
+  /// oldest first.
+  Future<List<TransactionRow>> transactionsInRange(int fromMs, int toMs) {
+    return (select(transactions)
+          ..where((t) =>
+              t.deletedAt.isNull() &
+              t.occurredAt.isBiggerOrEqualValue(fromMs) &
+              t.occurredAt.isSmallerThanValue(toMs))
+          ..orderBy([(t) => OrderingTerm.asc(t.occurredAt)]))
+        .get();
+  }
+
   Future<void> upsertTransaction(TransactionsCompanion entry) {
     return into(transactions).insertOnConflictUpdate(entry);
   }

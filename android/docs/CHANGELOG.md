@@ -100,3 +100,18 @@ Scope trimmed for offline-only (online `/summary` + fallback deferred to B7 — 
 - `android/app/lib/router.dart` — `/history` → `HistoryScreen`; removed the now-unused `_Placeholder` widget (all primary routes are real screens) and the redundant material import.
 - Tests: `test/providers/summary_test.dart` (7: range day/week/month, aggregation incl. exclusions/unknown/empty, and a seeded-drift day/week/month window check) + `test/screens/history_screen_test.dart` (2: empty state, chart+list render and re-render on period toggle).
 - Gates: `flutter analyze` clean; `flutter test` 52/52 green (`--timeout 90s` hang guard).
+
+---
+
+## 2026-06-23 — B6: CSV export (ExportService + share sheet)
+
+- `android/app/pubspec.yaml` — added `share_plus`, `path_provider`.
+- `android/app/lib/db/daos/transactions_dao.dart` — `activeTransactions()` / `transactionsInRange()` Futures (oldest-first, for export).
+- `android/app/lib/db/daos/categories_dao.dart` — `allCategories()` (incl. archived, for name resolution).
+- `android/app/lib/services/export_service.dart` — `ExportService`: `buildCsv({fromMs,toMs})` (pure, fixed columns, local `YYYY-MM-DD` date, `formatCents` amounts, RFC-4180 escaping); `exportToCsv({cacheDir,…})` writes `spendarr_export_<ts>.csv`.
+- `android/app/lib/providers/export.dart` — `exportServiceProvider`; `cacheDirProvider` (path_provider, overridable); `FileSharer` interface + `PlatformFileSharer` (share_plus `SharePlus.instance.share`) + `fileSharerProvider`; `exportRowCountProvider` (reactive count, family keyed by `(int?,int?)`).
+- `android/app/lib/screens/export_screen.dart` — date-range picker (default all time), reactive row-count preview, Export CSV button (write + share), loading indicator.
+- `android/app/lib/screens/history_screen.dart` + `settings_screen.dart` — export entry points (AppBar icon / Settings row) → `/export`.
+- `android/app/lib/router.dart` — `/export` route.
+- Tests: `test/services/export_service_test.dart` (8: header, all-rows/soft-delete-excluded, decimal amounts, category resolution incl. archived, local date, RFC-4180 escaping, ordering, range filter), `test/screens/export_screen_test.dart` (2: reactive count, export writes file + shares via fakes/temp dir + `runAsync`).
+- Gates: `flutter analyze` clean; `flutter test` 62/62 green.

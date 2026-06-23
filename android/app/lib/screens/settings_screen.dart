@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../api/api_error.dart';
 import '../api/client.dart';
@@ -109,6 +110,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Text('Test connection'),
+          ),
+          const Divider(height: 32),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.ios_share),
+            title: const Text('Export CSV'),
+            onTap: () => context.push('/export'),
           ),
         ],
       ),

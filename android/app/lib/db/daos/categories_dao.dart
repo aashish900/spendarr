@@ -20,6 +20,10 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
   }
 
+  /// All categories including archived — for resolving names of transactions
+  /// whose category was later archived (e.g. CSV export).
+  Future<List<Category>> allCategories() => select(categories).get();
+
   /// Insert or replace by primary key (used by both UI writes and sync pulls).
   Future<void> upsertCategory(CategoriesCompanion entry) {
     return into(categories).insertOnConflictUpdate(entry);

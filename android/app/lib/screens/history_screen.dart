@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../db/database.dart';
 import '../db/tables.dart';
@@ -78,6 +79,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       appBar: AppBar(
         title: const Text('History'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share),
+            tooltip: 'Export CSV',
+            onPressed: () => context.push('/export'),
+          ),
           IconButton(
             icon: const Icon(Icons.date_range),
             tooltip: 'Pick range',
