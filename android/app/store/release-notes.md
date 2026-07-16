@@ -73,6 +73,19 @@ First release of spendarr 🎉
 No accounts, no ads, no data collection. Your data stays on your device.
 ```
 
+### v0.1.1 (max 500 characters)
+
+```
+Polish update:
+
+• Fixed the + button covering the last transaction when scrolled to the bottom
+• Category icons now support any emoji, not just a preset list
+• Categories can now be edited, not just created and archived
+• Add/Edit Category screen redesigned to match the rest of the app
+
+No accounts, no ads, no data collection. Your data stays on your device.
+```
+
 ---
 
 ## Submission checklist (things this file doesn't cover)
