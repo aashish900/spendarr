@@ -86,6 +86,18 @@ Polish update:
 No accounts, no ads, no data collection. Your data stays on your device.
 ```
 
+### v0.1.2 (max 500 characters)
+
+```
+Polish update:
+
+• Category icons now show your emoji in its real colour instead of solid gold
+• Recurring screen now breaks totals down by Income, Investment, and Expense
+• Fixed the category picker not scrolling with a long list, blocking "New category"
+
+No accounts, no ads, no data collection. Your data stays on your device.
+```
+
 ---
 
 ## Submission checklist (things this file doesn't cover)
