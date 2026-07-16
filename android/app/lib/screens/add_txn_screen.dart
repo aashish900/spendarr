@@ -151,23 +151,28 @@ class _AddTxnScreenState extends ConsumerState<AddTxnScreen> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-        ),
-        child: CategoryForm(
-          initialKind: _kind,
-          onSaved: (id, kind) {
-            Navigator.of(sheetContext).pop();
-            setState(() {
-              _categoryId = id;
-              _categoryDefaulted = true;
-              _kind = kind;
-            });
-          },
+      builder: (sheetContext) => SafeArea(
+        // Scrollable: CategoryForm's fields + the keyboard (once a text
+        // field is focused) can together exceed the sheet's height —
+        // without this, the Save button could end up unreachable.
+        child: SingleChildScrollView(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
+          ),
+          child: CategoryForm(
+            initialKind: _kind,
+            onSaved: (id, kind) {
+              Navigator.of(sheetContext).pop();
+              setState(() {
+                _categoryId = id;
+                _categoryDefaulted = true;
+                _kind = kind;
+              });
+            },
+          ),
         ),
       ),
     );
@@ -177,22 +182,31 @@ class _AddTxnScreenState extends ConsumerState<AddTxnScreen> {
     final picked = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: kSurfaceBlack,
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final c in categories)
+        child: ConstrainedBox(
+          // Caps the sheet at 70% of the screen so a long category list
+          // scrolls within it instead of overflowing off-screen and hiding
+          // "New category" below the fold.
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final c in categories)
+                ListTile(
+                  leading: CategoryIconBubble(c.emoji, size: 32),
+                  title: Text(c.name),
+                  onTap: () => Navigator.of(sheetContext).pop(c.id),
+                ),
               ListTile(
-                leading: CategoryIconBubble(c.emoji, size: 32),
-                title: Text(c.name),
-                onTap: () => Navigator.of(sheetContext).pop(c.id),
+                leading: Gilded(child: const Icon(Icons.add, color: Colors.white)),
+                title: const Text('＋ New category'),
+                onTap: () => Navigator.of(sheetContext).pop(_newCategoryValue),
               ),
-            ListTile(
-              leading: Gilded(child: const Icon(Icons.add, color: Colors.white)),
-              title: const Text('＋ New category'),
-              onTap: () => Navigator.of(sheetContext).pop(_newCategoryValue),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

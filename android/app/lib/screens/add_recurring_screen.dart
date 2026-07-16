@@ -90,17 +90,25 @@ class _AddRecurringScreenState extends ConsumerState<AddRecurringScreen> {
     final picked = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: kSurfaceBlack,
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final c in categories)
-              ListTile(
-                leading: CategoryIconBubble(c.emoji, size: 32),
-                title: Text(c.name),
-                onTap: () => Navigator.of(sheetContext).pop(c.id),
-              ),
-          ],
+        child: ConstrainedBox(
+          // Caps the sheet at 70% of the screen so a long category list
+          // scrolls within it instead of overflowing off-screen.
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final c in categories)
+                ListTile(
+                  leading: CategoryIconBubble(c.emoji, size: 32),
+                  title: Text(c.name),
+                  onTap: () => Navigator.of(sheetContext).pop(c.id),
+                ),
+            ],
+          ),
         ),
       ),
     );

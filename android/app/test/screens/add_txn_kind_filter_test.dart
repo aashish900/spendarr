@@ -224,4 +224,59 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
   });
+
+  testWidgets(
+      'category sheet scrolls with a long list, and "New category" is still reachable',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    // Enough expense categories that the sheet's list can't fit on screen
+    // without scrolling — regression test for the sheet being a
+    // non-scrollable Column that clipped "New category" off-screen.
+    for (var i = 0; i < 30; i++) {
+      await _seedCategory(db,
+          id: 'c$i',
+          name: 'Category $i',
+          emoji: '🍔',
+          kind: TransactionKind.expense);
+    }
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [appDatabaseProvider.overrideWith((ref) => db)],
+      child: MaterialApp.router(routerConfig: appRouter),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300)); // sheet open
+    await tester.tap(find.widgetWithText(ListTile, 'Expense'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.tap(find.text('Category 0'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300)); // sheet open
+
+    // "New category" isn't visible yet (30 rows don't fit on screen), but
+    // scrolling the sheet's ListView down reaches it.
+    expect(find.text('＋ New category'), findsNothing);
+    await tester.drag(find.byType(ListView).last, const Offset(0, -3000));
+    await tester.pump();
+    expect(find.text('＋ New category'), findsOneWidget);
+
+    await tester.tap(find.text('＋ New category'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300)); // sheet transition
+    expect(find.byType(TextField), findsWidgets); // CategoryForm sheet opened
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 5));
+  });
 }

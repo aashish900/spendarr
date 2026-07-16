@@ -590,3 +590,13 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 - `lib/screens/recurring_screen.dart` — `_SummaryCard` no longer shows a single "Total recurring" figure (which mixed money coming in with money going out into one number). It now shows three columns — Income (green), Investment (gold), Expense (red/error) — each summed from **all** active rules of that kind, independent of the screen's own kind filter (so filtering the list to one kind doesn't leave the other two summary columns at ₹0). New `_KindStat` widget for each column; the "N active" count in the header now counts all active rules, not just the filtered subset.
 - `test/screens/recurring_flow_test.dart` — added a test seeding one active rule per kind and asserting each shows in its own summary column, and that no combined total (e.g. the sum of all three) appears anywhere.
 - Gates: `flutter analyze` clean; `flutter test` 175/175 green (+1 new).
+
+---
+
+## 2026-07-17 — Category picker sheet: fixed non-scrollable list hiding "New category" behind long lists
+
+- `lib/screens/add_txn_screen.dart` — `_pickCategory`'s bottom sheet used a fixed `Column`, which overflows and clips off-screen once the category list is longer than the sheet's available height — hiding both the tail of the list and the "＋ New category" row below it, so users with many categories couldn't scroll to pick one, or reach "New category" at all. Now `isScrollControlled: true` + a `ConstrainedBox` capping the sheet at 70% of screen height + a `ListView` (was `Column`), so a long list scrolls within the sheet instead of overflowing.
+- `lib/screens/add_txn_screen.dart` — `_createCategory`'s sheet (the inline "New category" form) wrapped in `SafeArea` + `SingleChildScrollView`, since `CategoryForm`'s fields plus the keyboard (once a field is focused) could together exceed the sheet's height and push the Save button out of reach.
+- `lib/screens/add_recurring_screen.dart` — same `Column` → `ListView` + `ConstrainedBox` fix applied to its own `_pickCategory` sheet (same bug, same cause).
+- `test/screens/add_txn_kind_filter_test.dart` — added a regression test seeding 30 categories, confirming "＋ New category" isn't visible until the sheet is scrolled, and that scrolling and tapping it does reach the create-category form.
+- Gates: `flutter analyze` clean; `flutter test` 176/176 green (+1 new).
