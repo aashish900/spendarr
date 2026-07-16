@@ -5,17 +5,25 @@ import '../db/tables.dart';
 import '../providers/categories.dart';
 import '../screens/categories_screen.dart' show kindLabel;
 import '../theme.dart';
-import '../util/category_icon.dart';
 import 'category_icon_bubble.dart';
 import 'field_card.dart';
+
+/// A handful of common emoji offered as one-tap shortcuts — not an
+/// exhaustive or enforced set. The text field next to them accepts any
+/// emoji typed via the system keyboard's emoji picker.
+const _suggestedEmojis = [
+  '💼', '💵', '🏦', '📈', '🍔', '☕', '🛒', '🏠', '🚗', '💡', '🎬', '🎁',
+  '✈️', '📱', '💰', '👕', '🐶', '🏥',
+];
 
 /// Icon + name + kind + Save. Writes a new category through
 /// [categoryWriterProvider] and reports the new id via [onSaved]. Shared by
 /// the standalone Add-category screen and the inline sheet on Add-transaction.
 ///
-/// The icon picker only offers [categoryIconChoices] — every choice has a
-/// real entry in the emoji→icon map, so what the user taps here is exactly
-/// what renders everywhere else (no silent fallback-icon remapping).
+/// The icon picker accepts any emoji — either typed directly (the system
+/// keyboard's emoji picker) or tapped from [_suggestedEmojis]'s shortcuts.
+/// [CategoryIconBubble] gilds whatever's picked at display time, so there's
+/// no curated map to keep in sync with the picker (see DECISIONLOG).
 class CategoryForm extends ConsumerStatefulWidget {
   const CategoryForm({super.key, this.initialKind, required this.onSaved});
 
@@ -28,7 +36,9 @@ class CategoryForm extends ConsumerStatefulWidget {
 
 class _CategoryFormState extends ConsumerState<CategoryForm> {
   final _nameController = TextEditingController();
-  String _selectedEmoji = categoryIconChoices.first;
+  late final _emojiController =
+      TextEditingController(text: _suggestedEmojis.first);
+  String _selectedEmoji = _suggestedEmojis.first;
   late TransactionKind _kind = widget.initialKind ?? TransactionKind.expense;
   String? _nameError;
   bool _saving = false;
@@ -36,7 +46,15 @@ class _CategoryFormState extends ConsumerState<CategoryForm> {
   @override
   void dispose() {
     _nameController.dispose();
+    _emojiController.dispose();
     super.dispose();
+  }
+
+  void _pickEmoji(String e) {
+    setState(() {
+      _selectedEmoji = e;
+      _emojiController.text = e;
+    });
   }
 
   Future<void> _save() async {
@@ -64,13 +82,36 @@ class _CategoryFormState extends ConsumerState<CategoryForm> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SectionLabel('ICON'),
+        Row(
+          children: [
+            CategoryIconBubble(_selectedEmoji, size: 56),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextField(
+                controller: _emojiController,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 24),
+                decoration: const InputDecoration(
+                  labelText: 'Tap to enter any emoji',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (v) {
+                  final trimmed = v.trim();
+                  if (trimmed.isEmpty) return;
+                  setState(() => _selectedEmoji = trimmed);
+                },
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final e in categoryIconChoices)
+            for (final e in _suggestedEmojis)
               GestureDetector(
-                onTap: () => setState(() => _selectedEmoji = e),
+                onTap: () => _pickEmoji(e),
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(

@@ -51,13 +51,13 @@ void main() {
 
     // Sheet's CategoryForm fields are scoped to the sheet — the underlying
     // AddTxnScreen (with its own TextFields) is still in the tree behind the
-    // modal. Name is CategoryForm's only TextField (icon is picked from the
-    // icon grid, not typed).
+    // modal. Within CategoryForm, TextField(0) is the emoji entry field and
+    // TextField(1) is Name.
     await tester.enterText(
       find.descendant(
         of: find.byType(CategoryForm),
         matching: find.byType(TextField),
-      ).first,
+      ).at(1),
       'Snacks',
     );
     await tester.tap(find.descendant(

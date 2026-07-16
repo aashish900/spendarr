@@ -7,7 +7,6 @@ import '../db/tables.dart';
 import '../providers/categories.dart';
 import '../providers/recurring.dart';
 import '../theme.dart';
-import '../util/category_icon.dart';
 import '../util/cron.dart';
 import '../util/money.dart';
 import '../widgets/field_card.dart';
@@ -270,7 +269,7 @@ class _RuleCard extends StatelessWidget {
         children: [
           _IconBox(
             child: Gilded(
-              child: Icon(categoryIconFor(category?.emoji ?? ''), color: Colors.white),
+              child: Text(category?.emoji ?? '🔁', style: const TextStyle(fontSize: 20)),
             ),
           ),
           const SizedBox(width: 12),

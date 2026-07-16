@@ -549,3 +549,15 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 - `android/app/store/release-notes.md` (new) — Play Console store-listing copy (short/full description, v0.1.0 "What's new" text) plus a submission checklist (data safety answers, content rating, privacy policy URL, package ID, screenshots still needed).
 - `PRIVACY_POLICY.md` (new, repo root) — privacy policy for Play Console submission. States plainly what's stored (transactions/categories/recurring rules/prefs, local-only), that nothing leaves the device except a user-triggered CSV export, no third-party analytics/ads/trackers, and discloses Android's OS-level Auto Backup behavior (see the deferred-fix decision above) so the policy doesn't contradict what the app actually does on-device. No automatic retention sweep is claimed since B8 (`android/docs/ROADMAP.md`) is unbuilt — data persists until uninstall or manual deletion.
 - No app code changed.
+
+---
+
+## 2026-07-16 — Category icons: any emoji is now allowed, gilded on-theme instead of mapped to a curated icon
+
+- `lib/util/category_icon.dart` and `test/util/category_icon_test.dart` deleted — the curated ~23-entry `emoji → IconData` lookup is gone.
+- `lib/widgets/category_icon_bubble.dart` — now renders `Text(emoji)` gilded via `Gilded`'s `ShaderMask` (`BlendMode.srcIn`) instead of `Icon(categoryIconFor(emoji))`, so any emoji renders gold-on-black on-theme, not just the curated set.
+- `lib/widgets/category_form.dart` — icon picker replaced: a `TextField` accepts any emoji (system keyboard's emoji picker), plus a `_suggestedEmojis` grid of common shortcuts as tap-to-fill convenience only (not an enforced set).
+- `lib/screens/recurring_screen.dart` — rule-card icon box updated the same way (gilded `Text(category.emoji)`).
+- `test/widgets/category_icon_bubble_test.dart`, `test/widgets/category_form_test.dart` — rewritten for the new behavior; added a case proving an emoji outside the old curated set (and outside the new suggestions) is accepted and persisted exactly as typed.
+- Fixed 3 unrelated pre-existing tests (`categories_flow_test.dart`, `add_txn_inline_category_test.dart` ×2) that hard-coded "Name is CategoryForm's only TextField" via `find.byType(TextField).first` — now `.at(1)`, since the new emoji `TextField` is field 0. Left unfixed, Name stayed empty, Save silently no-op'd, and the test hung until the 10-minute per-test timeout.
+- Gates: `flutter analyze` clean; `flutter test` 170/170 green (net -3 vs. 173: -3 for the deleted `category_icon_test.dart`, ±0 for the rewritten widget tests, +1 new case for arbitrary-emoji entry).

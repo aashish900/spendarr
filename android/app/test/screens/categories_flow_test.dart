@@ -39,8 +39,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Add category'), findsOneWidget);
 
-    // Name is the only TextField now (icon is picked from the icon grid).
-    await tester.enterText(find.byType(TextField).first, 'Food');
+    // TextField(0) is the emoji entry field; TextField(1) is Name.
+    await tester.enterText(find.byType(TextField).at(1), 'Food');
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));

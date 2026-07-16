@@ -4,11 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:spendarr/db/database.dart';
 import 'package:spendarr/db/database_provider.dart';
-import 'package:spendarr/util/category_icon.dart';
 import 'package:spendarr/widgets/category_form.dart';
 
 void main() {
-  testWidgets('picking an icon and saving persists exactly that emoji',
+  testWidgets('tapping a suggested emoji persists exactly that emoji',
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
@@ -24,45 +23,56 @@ void main() {
     ));
     await tester.pump();
 
-    // Default selection is the first curated icon choice.
-    expect(categoryIconChoices.first, isNotEmpty);
+    // Default preview is the first suggested shortcut.
+    expect(find.text('💼'), findsWidgets);
 
-    // Pick the second curated icon instead of the default.
-    final secondEmoji = categoryIconChoices[1];
-    await tester.tap(find.byIcon(categoryIconFor(secondEmoji)));
+    // Tap the second suggestion instead of the default.
+    await tester.tap(find.text('💵'));
     await tester.pump();
 
-    await tester.enterText(find.byType(TextField).first, 'Custom');
+    // TextField(0) is the emoji entry field; TextField(1) is Name.
+    await tester.enterText(find.byType(TextField).at(1), 'Custom');
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(savedId, isNotNull);
     final row = await db.categoriesDao.categoryById(savedId!);
-    // What was tapped is exactly what got persisted — no fallback remapping.
-    expect(row!.emoji, secondEmoji);
+    expect(row!.emoji, '💵');
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
   });
 
-  testWidgets('tapping an icon updates the visual selection', (tester) async {
+  testWidgets(
+      'typing any emoji, not just a suggested one, persists exactly that',
+      (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
 
+    String? savedId;
     await tester.pumpWidget(ProviderScope(
       overrides: [appDatabaseProvider.overrideWith((ref) => db)],
       child: MaterialApp(
-        home: Scaffold(body: CategoryForm(onSaved: (_, _) {})),
+        home: Scaffold(
+          body: CategoryForm(onSaved: (id, kind) => savedId = id),
+        ),
       ),
     ));
     await tester.pump();
 
-    // Every curated choice renders as an icon on screen (the picker itself,
-    // not just other screens, uses the themed icon — no colourful emoji).
-    for (final e in categoryIconChoices.take(3)) {
-      expect(find.byIcon(categoryIconFor(e)), findsWidgets);
-    }
+    // '🥷' is deliberately not in the suggested-shortcuts list — proves the
+    // field accepts arbitrary emoji, not just the curated set.
+    await tester.enterText(find.byType(TextField).first, '🥷');
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).at(1), 'Ninja stuff');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(savedId, isNotNull);
+    final row = await db.categoriesDao.categoryById(savedId!);
+    expect(row!.emoji, '🥷');
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 1));
