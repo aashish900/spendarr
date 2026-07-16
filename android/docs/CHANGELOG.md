@@ -541,3 +541,11 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 
 - `android/app/lib/screens/home_screen.dart` — the journal `ListView`'s bottom padding grew from `EdgeInsets.all(16)` to `EdgeInsets.fromLTRB(16, 16, 16, 96)`, so the last transaction row can scroll clear of the `GoldFab` instead of sitting underneath it when the user scrolls to the bottom of the month.
 - Gates: `flutter analyze` clean; `flutter test` 173/173 green (no test changes — layout-only, no new/changed text or structure to assert on).
+
+---
+
+## 2026-07-16 — Play Store submission materials: store listing copy + privacy policy
+
+- `android/app/store/release-notes.md` (new) — Play Console store-listing copy (short/full description, v0.1.0 "What's new" text) plus a submission checklist (data safety answers, content rating, privacy policy URL, package ID, screenshots still needed).
+- `PRIVACY_POLICY.md` (new, repo root) — privacy policy for Play Console submission. States plainly what's stored (transactions/categories/recurring rules/prefs, local-only), that nothing leaves the device except a user-triggered CSV export, no third-party analytics/ads/trackers, and discloses Android's OS-level Auto Backup behavior (see the deferred-fix decision above) so the policy doesn't contradict what the app actually does on-device. No automatic retention sweep is claimed since B8 (`android/docs/ROADMAP.md`) is unbuilt — data persists until uninstall or manual deletion.
+- No app code changed.
