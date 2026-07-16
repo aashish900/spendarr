@@ -573,3 +573,12 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 - `lib/router.dart` — `/categories/add` now reads an `editCategoryId` query parameter, same pattern as `/add?editTransactionId=`.
 - `lib/screens/categories_screen.dart` — each row is now tappable (→ `/categories/add?editCategoryId=<id>`), and the trailing archive icon is gilded for consistency with the rest of the app's icon language (was a plain unthemed `Icon`).
 - Gates: `flutter analyze` clean; `flutter test` 174/174 green (+4 new: a DAO test for `updateCategory`, a `CategoryWriter.update` test, a `CategoryForm` edit-mode test, and a full tap-row-to-edit flow test). Also fixed a `SegmentedButton<TransactionKind>` finder in `add_txn_inline_category_test.dart` left over from the emoji-theming change, since `CategoryForm` no longer contains one.
+
+---
+
+## 2026-07-17 — Category emoji: stop gilding it into a solid gold blob
+
+- `lib/widgets/category_icon_bubble.dart` — `CategoryIconBubble` no longer wraps the emoji in `Gilded`; the emoji now renders in its native colour. The dark circle background is unchanged.
+- `lib/screens/recurring_screen.dart` — rule-card icon box updated the same way (plain `Text(category.emoji)`, no `Gilded`).
+- `test/widgets/category_icon_bubble_test.dart` — updated to assert no `Gilded` wraps the emoji.
+- Gates: `flutter analyze` clean; `flutter test` 174/174 green.

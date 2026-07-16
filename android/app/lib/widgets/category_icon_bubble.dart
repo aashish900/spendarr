@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
-import 'gilded.dart';
 
-/// Dark circle bubble with the category's own emoji, gilded gold via
-/// [Gilded]'s `BlendMode.srcIn` — the shader replaces the emoji glyph's
-/// native colour with the app's metallic gold gradient, keeping only its
-/// alpha silhouette. This lets a user pick *any* emoji (not just a curated
-/// set) and still see it rendered on-theme everywhere in the app — see
-/// DECISIONLOG for the switch away from the earlier fixed emoji→icon map.
+/// Dark circle bubble with the category's own emoji in its native colour.
+/// Letting a user pick *any* emoji (not just a curated set) means the glyph
+/// is a multi-colour bitmap, not a single-colour line icon — gilding it via
+/// `ShaderMask`'s `BlendMode.srcIn` (an earlier attempt) discarded that
+/// colour entirely and left a solid gold silhouette/blob, losing all detail.
+/// Reported as a regression, so the emoji itself renders as-is; only the
+/// surrounding bubble stays on-theme. See DECISIONLOG.
 class CategoryIconBubble extends StatelessWidget {
   const CategoryIconBubble(this.emoji, {super.key, this.size = 40});
 
@@ -20,9 +20,7 @@ class CategoryIconBubble extends StatelessWidget {
     return CircleAvatar(
       radius: size / 2,
       backgroundColor: kBackgroundBlack,
-      child: Gilded(
-        child: Text(emoji, style: TextStyle(fontSize: size * 0.5)),
-      ),
+      child: Text(emoji, style: TextStyle(fontSize: size * 0.5)),
     );
   }
 }

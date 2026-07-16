@@ -268,9 +268,7 @@ class _RuleCard extends StatelessWidget {
       child: Row(
         children: [
           _IconBox(
-            child: Gilded(
-              child: Text(category?.emoji ?? '🔁', style: const TextStyle(fontSize: 20)),
-            ),
+            child: Text(category?.emoji ?? '🔁', style: const TextStyle(fontSize: 20)),
           ),
           const SizedBox(width: 12),
           Expanded(
