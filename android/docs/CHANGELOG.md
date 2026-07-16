@@ -534,3 +534,10 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 - `README.md` — "Releasing" example changed from `git tag -a v0.2.0` to `git tag -a v0.1.0` to match. `android/app/README.md`'s own example, `pubspec.yaml`'s `version: 0.1.0+1`, and `android/docs/ROADMAP.md`'s B7 milestone target were already `v0.1.0` and needed no change.
 - `android/docs/DECISIONLOG.md` — ADR recording the tag-history reset and why.
 - No app code changed; docs/versioning only.
+
+---
+
+## 2026-07-16 — Home: FAB no longer covers the last ledger row
+
+- `android/app/lib/screens/home_screen.dart` — the journal `ListView`'s bottom padding grew from `EdgeInsets.all(16)` to `EdgeInsets.fromLTRB(16, 16, 16, 96)`, so the last transaction row can scroll clear of the `GoldFab` instead of sitting underneath it when the user scrolls to the bottom of the month.
+- Gates: `flutter analyze` clean; `flutter test` 173/173 green (no test changes — layout-only, no new/changed text or structure to assert on).

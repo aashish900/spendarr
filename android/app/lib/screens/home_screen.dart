@@ -153,7 +153,9 @@ class HomeScreen extends ConsumerWidget {
                       : null;
 
                   return ListView(
-                    padding: const EdgeInsets.all(16),
+                    // Extra bottom padding so the last ledger row can scroll
+                    // clear of the FAB instead of sitting underneath it.
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
