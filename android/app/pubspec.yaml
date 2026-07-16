@@ -1,0 +1,47 @@
+name: spendarr
+description: "spendarr — offline-first expense tracker (Android)."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  dio: ^5.9.2
+  drift: ^2.34.0
+  drift_flutter: ^0.3.0
+  fl_chart: ^1.2.0
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.3.2
+  flutter_secure_storage: ^10.3.1
+  go_router: ^17.3.0
+  path_provider: ^2.1.6
+  riverpod_annotation: ^4.0.3
+  share_plus: ^13.1.0
+  uuid: ^4.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.15.0
+  drift_dev: ^2.34.0
+  riverpod_generator: ^4.0.4
+  http_mock_adapter: ^0.6.1
+  flutter_launcher_icons: ^0.14.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+
+flutter_launcher_icons:
+  image_path: "assets/icon.png"
+  android: true
+  ios: false
+  # Adaptive icon (Android 8+): pure-black background with the wallet as the
+  # foreground layer, padded (assets/icon_foreground.png) so the launcher's
+  # circular mask doesn't clip it. Pre-8.0 devices fall back to image_path.
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icon_foreground.png"

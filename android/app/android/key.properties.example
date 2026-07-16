@@ -1,0 +1,12 @@
+# Release-signing config for the Android client. Copy this file to
+# `key.properties` (same dir) and fill in the real values. The real file is
+# gitignored — never commit it.
+#
+# `storeFile` is resolved relative to this directory (i.e. android/app/android/).
+# The standard convention is to place the keystore at
+# `android/app/android/keystore.jks` and reference it as `keystore.jks`.
+
+storePassword=CHANGE_ME
+keyPassword=CHANGE_ME
+keyAlias=spendarr
+storeFile=keystore.jks
