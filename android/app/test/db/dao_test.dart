@@ -45,6 +45,34 @@ void main() {
       expect(row, isNotNull);
       expect(row!.deletedAt, isNotNull); // tombstone retained for sync
     });
+
+    test('updateCategory edits fields but preserves createdAt', () async {
+      final created = now();
+      await db.categoriesDao.upsertCategory(CategoriesCompanion.insert(
+        id: 'c1',
+        name: 'Food',
+        emoji: '🍔',
+        kind: TransactionKind.expense,
+        createdAt: created,
+        updatedAt: created,
+      ));
+
+      final updatedAt = created + 1000;
+      await db.categoriesDao.updateCategory(
+        'c1',
+        name: 'Groceries',
+        emoji: '🛒',
+        kind: TransactionKind.income,
+        updatedAt: updatedAt,
+      );
+
+      final row = await db.categoriesDao.categoryById('c1');
+      expect(row!.name, 'Groceries');
+      expect(row.emoji, '🛒');
+      expect(row.kind, TransactionKind.income);
+      expect(row.createdAt, created); // untouched, unlike upsertCategory
+      expect(row.updatedAt, updatedAt);
+    });
   });
 
   group('TransactionsDao', () {

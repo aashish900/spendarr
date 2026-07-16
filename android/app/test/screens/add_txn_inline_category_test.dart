@@ -7,6 +7,7 @@ import 'package:spendarr/db/database_provider.dart';
 import 'package:spendarr/db/tables.dart';
 import 'package:spendarr/router.dart';
 import 'package:spendarr/widgets/category_form.dart';
+import 'package:spendarr/widgets/kind_pill_selector.dart';
 
 void main() {
   testWidgets(
@@ -146,16 +147,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400)); // sheet close + sheet open
 
-    // The sheet's kind segmented button should default to Income.
-    final sheetKindButton = find.descendant(
+    // The sheet's kind pill selector should default to Income.
+    final sheetKindSelector = find.descendant(
       of: find.byType(CategoryForm),
-      matching: find.byType(SegmentedButton<TransactionKind>),
+      matching: find.byType(KindPillSelector),
     );
-    expect(sheetKindButton, findsOneWidget);
-    final selected = tester
-        .widget<SegmentedButton<TransactionKind>>(sheetKindButton)
-        .selected;
-    expect(selected, {TransactionKind.income});
+    expect(sheetKindSelector, findsOneWidget);
+    final selected =
+        tester.widget<KindPillSelector>(sheetKindSelector).selected;
+    expect(selected, TransactionKind.income);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));

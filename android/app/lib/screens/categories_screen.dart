@@ -64,8 +64,12 @@ class CategoriesScreen extends ConsumerWidget {
                     ListTile(
                       leading: CategoryIconBubble(c.emoji, size: 36),
                       title: Text(c.name),
+                      onTap: () =>
+                          context.push('/categories/add?editCategoryId=${c.id}'),
                       trailing: IconButton(
-                        icon: const Icon(Icons.archive_outlined),
+                        icon: Gilded(
+                            child: const Icon(Icons.archive_outlined,
+                                color: Colors.white)),
                         tooltip: 'Archive',
                         onPressed: () =>
                             ref.read(categoryWriterProvider).archive(c.id),

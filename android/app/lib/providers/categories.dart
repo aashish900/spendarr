@@ -66,6 +66,41 @@ class CategoryWriter {
     return categoryId;
   }
 
+  /// Edits an existing category in place. Leaves `createdAt` untouched
+  /// (see `CategoriesDao.updateCategory`) — an edit is still an `upsert` on
+  /// the sync contract (see DECISIONLOG 2026-06-23).
+  Future<void> update(
+    String id, {
+    required String name,
+    required String emoji,
+    required TransactionKind kind,
+  }) async {
+    final now = DateTime.now().toUtc().millisecondsSinceEpoch;
+    await _db.transaction(() async {
+      await _db.categoriesDao.updateCategory(
+        id,
+        name: name,
+        emoji: emoji,
+        kind: kind,
+        updatedAt: now,
+      );
+      final row = await _db.categoriesDao.categoryById(id);
+      await _db.outboxDao.enqueue(_outbox(
+        op: OutboxOp.upsert,
+        now: now,
+        payload: {
+          'id': id,
+          'name': name,
+          'emoji': emoji,
+          'kind': kind.name,
+          'created_at': row?.createdAt,
+          'updated_at': now,
+          'deleted_at': null,
+        },
+      ));
+    });
+  }
+
   Future<void> archive(String id) async {
     final now = DateTime.now().toUtc().millisecondsSinceEpoch;
     await _db.transaction(() async {

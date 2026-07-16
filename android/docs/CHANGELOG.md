@@ -561,3 +561,15 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 - `test/widgets/category_icon_bubble_test.dart`, `test/widgets/category_form_test.dart` — rewritten for the new behavior; added a case proving an emoji outside the old curated set (and outside the new suggestions) is accepted and persisted exactly as typed.
 - Fixed 3 unrelated pre-existing tests (`categories_flow_test.dart`, `add_txn_inline_category_test.dart` ×2) that hard-coded "Name is CategoryForm's only TextField" via `find.byType(TextField).first` — now `.at(1)`, since the new emoji `TextField` is field 0. Left unfixed, Name stayed empty, Save silently no-op'd, and the test hung until the 10-minute per-test timeout.
 - Gates: `flutter analyze` clean; `flutter test` 170/170 green (net -3 vs. 173: -3 for the deleted `category_icon_test.dart`, ±0 for the rewritten widget tests, +1 new case for arbitrary-emoji entry).
+
+---
+
+## 2026-07-16 — Categories: edit support + Add/Edit screen re-themed to match Add-transaction
+
+- `lib/db/daos/categories_dao.dart` — new `updateCategory()`, a partial update (name/emoji/kind + bumped `updatedAt`) that leaves `createdAt` untouched, mirroring `TransactionsDao.updateTransaction`.
+- `lib/providers/categories.dart` — new `CategoryWriter.update()`: writes the drift update + an `OutboxOp.upsert` outbox entry in one transaction (an edit is still an upsert on the sync contract, per the existing outbox-op convention).
+- `lib/widgets/category_form.dart` — full re-theme to match `AddTxnScreen`/`AddRecurringScreen`'s card-based black+gold language: `SectionLabel`/`FieldCard` wrap the icon and name fields, `SegmentedButton<TransactionKind>` replaced with `KindPillSelector`, plain `FilledButton` replaced with the gold-gradient Save button. New optional `editCategoryId` param: when set, async-loads the existing category (same `_existingLoaded` pattern as `AddTxnScreen`'s edit mode), prefills every field, and calls `CategoryWriter.update()` instead of `.add()` on save; the button reads "Update" instead of "Save" while editing.
+- `lib/screens/add_category_screen.dart` — re-themed AppBar (gilded back arrow, matching every other Add/Edit screen); title switches to "Edit category" when `editCategoryId` is set; new `editCategoryId` param threaded through to `CategoryForm`.
+- `lib/router.dart` — `/categories/add` now reads an `editCategoryId` query parameter, same pattern as `/add?editTransactionId=`.
+- `lib/screens/categories_screen.dart` — each row is now tappable (→ `/categories/add?editCategoryId=<id>`), and the trailing archive icon is gilded for consistency with the rest of the app's icon language (was a plain unthemed `Icon`).
+- Gates: `flutter analyze` clean; `flutter test` 174/174 green (+4 new: a DAO test for `updateCategory`, a `CategoryWriter.update` test, a `CategoryForm` edit-mode test, and a full tap-row-to-edit flow test). Also fixed a `SegmentedButton<TransactionKind>` finder in `add_txn_inline_category_test.dart` left over from the emoji-theming change, since `CategoryForm` no longer contains one.

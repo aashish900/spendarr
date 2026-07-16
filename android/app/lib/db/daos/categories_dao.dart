@@ -29,6 +29,26 @@ class CategoriesDao extends DatabaseAccessor<AppDatabase>
     return into(categories).insertOnConflictUpdate(entry);
   }
 
+  /// Partial update for editing an existing category — leaves [Category.createdAt]
+  /// untouched (unlike [upsertCategory], which would reset it), bumping only
+  /// the edited fields + `updatedAt`. Mirrors `TransactionsDao.updateTransaction`.
+  Future<void> updateCategory(
+    String id, {
+    required String name,
+    required String emoji,
+    required TransactionKind kind,
+    required int updatedAt,
+  }) {
+    return (update(categories)..where((c) => c.id.equals(id))).write(
+      CategoriesCompanion(
+        name: Value(name),
+        emoji: Value(emoji),
+        kind: Value(kind),
+        updatedAt: Value(updatedAt),
+      ),
+    );
+  }
+
   /// Soft-delete (archive): sets [deletedAt] and bumps `updatedAt` to the same
   /// instant (for LWW sync). Row is retained as a tombstone.
   Future<void> archiveCategory(String id, {required int deletedAt}) {

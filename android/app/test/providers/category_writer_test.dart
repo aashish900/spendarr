@@ -40,6 +40,34 @@ void main() {
     expect(outbox.single.payloadJson, contains(id));
   });
 
+  test('update → fields change, createdAt untouched, outbox upsert', () async {
+    final id = await container.read(categoryWriterProvider).add(
+          name: 'Food',
+          emoji: '🍔',
+          kind: TransactionKind.expense,
+        );
+    final before = await db.categoriesDao.categoryById(id);
+
+    await container.read(categoryWriterProvider).update(
+          id,
+          name: 'Groceries',
+          emoji: '🛒',
+          kind: TransactionKind.income,
+        );
+
+    final row = await db.categoriesDao.categoryById(id);
+    expect(row!.name, 'Groceries');
+    expect(row.emoji, '🛒');
+    expect(row.kind, TransactionKind.income);
+    expect(row.createdAt, before!.createdAt); // untouched by the edit
+
+    final outbox = await db.outboxDao.queue();
+    expect(outbox, hasLength(2)); // add + update
+    expect(outbox.last.op, OutboxOp.upsert);
+    expect(outbox.last.targetTable, 'categories');
+    expect(outbox.last.payloadJson, contains('Groceries'));
+  });
+
   test('archive → deletedAt set, removed from active, outbox delete', () async {
     final id = await container.read(categoryWriterProvider).add(
           name: 'Food',

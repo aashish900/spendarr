@@ -66,7 +66,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/categories/add',
       parentNavigatorKey: _rootNavigatorKey,
-      builder: (_, _) => const AddCategoryScreen(),
+      builder: (_, state) => AddCategoryScreen(
+        editCategoryId: state.uri.queryParameters['editCategoryId'],
+      ),
     ),
     GoRoute(
       path: '/recurring/add',
