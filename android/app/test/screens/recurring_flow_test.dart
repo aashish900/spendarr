@@ -158,4 +158,94 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
   });
+
+  testWidgets(
+      'summary breaks active rules down by kind (Income/Investment/Expense), not one combined total',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await db.categoriesDao.upsertCategory(CategoriesCompanion.insert(
+      id: 'c1',
+      name: 'Rent',
+      emoji: '🏠',
+      kind: TransactionKind.expense,
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    await db.categoriesDao.upsertCategory(CategoriesCompanion.insert(
+      id: 'c2',
+      name: 'Salary',
+      emoji: '💼',
+      kind: TransactionKind.income,
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    await db.categoriesDao.upsertCategory(CategoriesCompanion.insert(
+      id: 'c3',
+      name: 'SIP',
+      emoji: '📈',
+      kind: TransactionKind.investment,
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    await db.recurringDao.upsertRule(RecurringRulesCompanion.insert(
+      id: 'r1',
+      categoryId: 'c1',
+      amount: 1000000, // ₹10,000
+      kind: TransactionKind.expense,
+      cron: '0 0 1 * *',
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    await db.recurringDao.upsertRule(RecurringRulesCompanion.insert(
+      id: 'r2',
+      categoryId: 'c2',
+      amount: 5000000, // ₹50,000
+      kind: TransactionKind.income,
+      cron: '0 0 1 * *',
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    await db.recurringDao.upsertRule(RecurringRulesCompanion.insert(
+      id: 'r3',
+      categoryId: 'c3',
+      amount: 2000000, // ₹20,000
+      kind: TransactionKind.investment,
+      cron: '0 0 1 * *',
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+
+    final router = GoRouter(
+      initialLocation: '/recurring',
+      routes: [
+        GoRoute(
+            path: '/recurring', builder: (_, _) => const RecurringScreen()),
+      ],
+    );
+
+    await tester.pumpWidget(ProviderScope(
+      overrides: [appDatabaseProvider.overrideWith((ref) => db)],
+      child: MaterialApp.router(routerConfig: router),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('Income'), findsOneWidget);
+    expect(find.text('Investment'), findsOneWidget);
+    expect(find.text('Expense'), findsOneWidget);
+    // Summary column figure + that rule's own row amount, one each.
+    expect(find.text('₹50,000'), findsNWidgets(2));
+    expect(find.text('₹20,000'), findsNWidgets(2));
+    expect(find.text('₹10,000'), findsNWidgets(2));
+    // No single combined total is shown anywhere.
+    expect(find.text('₹80,000'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 5));
+  });
 }

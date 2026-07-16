@@ -130,12 +130,23 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
               : allRules.where((r) => r.kind == _kindFilter).toList();
           final active = rules.where((r) => r.active).toList();
           final inactive = rules.where((r) => !r.active).toList();
-          final totalCents = active.fold<int>(0, (a, r) => a + r.amount);
+          // The summary breakdown is always by-kind across *all* active
+          // rules, regardless of the list's own kind filter — filtering to
+          // one kind would otherwise leave the other two columns at ₹0.
+          final allActive = allRules.where((r) => r.active).toList();
+          int sumFor(TransactionKind k) => allActive
+              .where((r) => r.kind == k)
+              .fold<int>(0, (a, r) => a + r.amount);
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              _SummaryCard(totalCents: totalCents, activeCount: active.length),
+              _SummaryCard(
+                incomeCents: sumFor(TransactionKind.income),
+                investmentCents: sumFor(TransactionKind.investment),
+                expenseCents: sumFor(TransactionKind.expense),
+                activeCount: allActive.length,
+              ),
               const SizedBox(height: 24),
               SectionLabel('ACTIVE (${active.length})'),
               if (active.isEmpty)
@@ -191,10 +202,21 @@ class _RecurringScreenState extends ConsumerState<RecurringScreen> {
 /// sentinel is needed to tell the two apart.
 const _allFilterValue = Object();
 
+/// Recurring summary: instead of one combined total, breaks active rules
+/// down by kind (Income/Investment/Expense) — a single "total recurring"
+/// figure mixed money coming in with money going out into one meaningless
+/// number.
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.totalCents, required this.activeCount});
+  const _SummaryCard({
+    required this.incomeCents,
+    required this.investmentCents,
+    required this.expenseCents,
+    required this.activeCount,
+  });
 
-  final int totalCents;
+  final int incomeCents;
+  final int investmentCents;
+  final int expenseCents;
   final int activeCount;
 
   @override
@@ -206,45 +228,87 @@ class _SummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: kCardBorder),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _IconBox(child: Gilded(child: const Icon(Icons.autorenew, color: Colors.white))),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Total recurring',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelMedium
-                        ?.copyWith(color: kTextSecondary)),
-                const SizedBox(height: 2),
-                Text(formatRupees(totalCents),
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
+          Row(
             children: [
-              Text('This month',
+              _IconBox(child: Gilded(child: const Icon(Icons.autorenew, color: Colors.white))),
+              const SizedBox(width: 12),
+              Text('Recurring transactions',
                   style: Theme.of(context)
                       .textTheme
-                      .labelMedium
-                      ?.copyWith(color: kTextSecondary)),
-              const SizedBox(height: 2),
+                      .titleMedium
+                      ?.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+              const Spacer(),
               Text('$activeCount active',
                   style: const TextStyle(color: kGold, fontWeight: FontWeight.w600)),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _KindStat(
+                    label: 'Income', valueCents: incomeCents, color: kIncomeGreen),
+              ),
+              _divider(),
+              Expanded(
+                child: _KindStat(
+                    label: 'Investment', valueCents: investmentCents, color: kGold),
+              ),
+              _divider(),
+              Expanded(
+                child: _KindStat(
+                    label: 'Expense',
+                    valueCents: expenseCents,
+                    color: Theme.of(context).colorScheme.error),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _divider() => Container(
+        width: 1,
+        height: 36,
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        color: Colors.white12,
+      );
+}
+
+class _KindStat extends StatelessWidget {
+  const _KindStat({
+    required this.label,
+    required this.valueCents,
+    required this.color,
+  });
+
+  final String label;
+  final int valueCents;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: kTextSecondary)),
+        const SizedBox(height: 4),
+        Text(formatRupees(valueCents),
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: color, fontWeight: FontWeight.w600)),
+      ],
     );
   }
 }

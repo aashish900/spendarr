@@ -582,3 +582,11 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 - `lib/screens/recurring_screen.dart` — rule-card icon box updated the same way (plain `Text(category.emoji)`, no `Gilded`).
 - `test/widgets/category_icon_bubble_test.dart` — updated to assert no `Gilded` wraps the emoji.
 - Gates: `flutter analyze` clean; `flutter test` 174/174 green.
+
+---
+
+## 2026-07-17 — Recurring screen: summary splits by kind (Income/Investment/Expense) instead of one combined total
+
+- `lib/screens/recurring_screen.dart` — `_SummaryCard` no longer shows a single "Total recurring" figure (which mixed money coming in with money going out into one number). It now shows three columns — Income (green), Investment (gold), Expense (red/error) — each summed from **all** active rules of that kind, independent of the screen's own kind filter (so filtering the list to one kind doesn't leave the other two summary columns at ₹0). New `_KindStat` widget for each column; the "N active" count in the header now counts all active rules, not just the filtered subset.
+- `test/screens/recurring_flow_test.dart` — added a test seeding one active rule per kind and asserting each shows in its own summary column, and that no combined total (e.g. the sum of all three) appears anywhere.
+- Gates: `flutter analyze` clean; `flutter test` 175/175 green (+1 new).
