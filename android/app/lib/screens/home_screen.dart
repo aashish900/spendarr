@@ -15,6 +15,7 @@ import '../theme.dart';
 import '../util/cron.dart';
 import '../util/datetime.dart';
 import '../util/money.dart';
+import '../widgets/budget_prompt_dialog.dart';
 import '../widgets/gilded.dart';
 import '../widgets/gold_fab.dart';
 import '../widgets/home_header.dart';
@@ -70,11 +71,45 @@ Future<void> _showAddSheet(BuildContext context) {
 /// (see `effectiveHomeMonthProvider`); the switcher lets the user browse
 /// earlier months but not past the current one. Day/Week zoom only applies
 /// to the current month — a past month always shows Month view.
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  // Tracks whether the budget prompt has already been scheduled this widget
+  // lifetime, so it doesn't re-fire on every rebuild while `profileProvider`
+  // settles or the user browses months.
+  bool _promptScheduled = false;
+
+  void _maybeSchedulePrompt(Profile profile, DateTime now) {
+    if (_promptScheduled || !needsBudgetPrompt(profile, now)) return;
+    _promptScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (profile.budgetMode == null) {
+        showBudgetPromptDialog(
+          context,
+          canCancel: false,
+          showModeChoice: true,
+          title: 'Set up your budget',
+        );
+      } else {
+        showBudgetPromptDialog(
+          context,
+          canCancel: false,
+          showModeChoice: false,
+          title: "Set this month's budget",
+          initialCents: profile.monthlyBudgetCents,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final month = ref.watch(effectiveHomeMonthProvider);
     final currentDay = ref.watch(localDayTickProvider).value ?? DateTime.now();
     final canGoForward = month.year < currentDay.year ||
@@ -85,16 +120,22 @@ class HomeScreen extends ConsumerWidget {
     final txnsAsync =
         ref.watch(transactionsInRangeProvider((range.startMs, range.endMs)));
     final categoriesAsync = ref.watch(activeCategoriesProvider);
-    final displayName = ref.watch(profileProvider).value?.displayName;
+    final profileAsync = ref.watch(profileProvider);
+    final profile = profileAsync.value ?? const Profile();
+    final displayName = profile.displayName;
     final now = ref.watch(nowProvider)();
+    if (profileAsync.hasValue) _maybeSchedulePrompt(profile, currentDay);
     final greeting = greetingFor(now);
     final isCurrentMonth =
         month.year == currentDay.year && month.month == currentDay.month;
     final recurringRules =
         ref.watch(activeRecurringProvider).value ?? const <RecurringRule>[];
+    // Home's Recurring figure is upcoming outflows only (expense +
+    // investment) — an income rule (e.g. salary) shouldn't inflate it.
     final recurringProjectedCents = [
       for (final r in recurringRules)
-        occurrencesInMonth(r.cron, month.year, month.month) * r.amount,
+        if (r.kind != TransactionKind.income)
+          occurrencesInMonth(r.cron, month.year, month.month) * r.amount,
     ].fold<int>(0, (a, b) => a + b);
     final categories = categoriesAsync.value ?? const <Category>[];
     final categoriesById = {for (final c in categories) c.id: c};
@@ -130,18 +171,26 @@ class HomeScreen extends ConsumerWidget {
                 data: (txns) {
                   final summary = summarizeTransactions(txns);
 
-                  // The ring's centre shows the money left this month:
-                  // income − expenses − investments (matches the mockup,
-                  // where ₹6,000 income − ₹1,180 spent → "₹4,820 left to
-                  // spend"); the fill fraction is the same outflows measured
-                  // against income, so a full ring = everything earned this
-                  // month has been spent.
+                  // The ring's centre shows the money left against the
+                  // user's budget this month: budget − expenses −
+                  // investments. Full ring (gold) at zero spend, draining
+                  // toward zero as budget is used up, then filling red in
+                  // the opposite direction once overspent (see
+                  // `budgetRingProgress`). With no budget configured the
+                  // ring is blank and the centre just shows total spend.
                   final outflowCents =
                       summary.expenseCents + summary.investmentCents;
-                  final leftCents = summary.incomeCents - outflowCents;
-                  final amountText = formatRupees(leftCents.abs());
+                  final budgetCents = profile.monthlyBudgetCents ?? 0;
+                  final remainingCents = budgetCents - outflowCents;
+                  final progress =
+                      budgetRingProgress(budgetCents, outflowCents);
+                  final amountText = formatRupees(
+                      (budgetCents <= 0 ? outflowCents : remainingCents)
+                          .abs());
                   final String descriptor;
-                  if (leftCents < 0) {
+                  if (budgetCents <= 0) {
+                    descriptor = 'spent';
+                  } else if (remainingCents < 0) {
                     descriptor = 'overspent';
                   } else {
                     descriptor = isCurrentMonth ? 'left to spend' : 'left over';
@@ -181,8 +230,7 @@ class HomeScreen extends ConsumerWidget {
                               }
                             },
                             child: MonthRing(
-                              progress: ringProgress(
-                                  outflowCents, summary.incomeCents),
+                              progress: progress,
                               amountText: amountText,
                               descriptor: descriptor,
                               footer: footer,

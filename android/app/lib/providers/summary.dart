@@ -131,6 +131,16 @@ double ringProgress(int outflowCents, int incomeCents) {
   return (outflowCents / incomeCents).clamp(0, 1).toDouble();
 }
 
+/// Budget-based month-ring fill: `1` (full, gold) at zero spend, draining
+/// toward `0` as [outflowCents] approaches [budgetCents], then negative
+/// (red, opposite direction) once overspent — clamped at `-1` once the
+/// overspend itself reaches the budget amount. `0` (blank ring) when no
+/// budget is configured.
+double budgetRingProgress(int budgetCents, int outflowCents) {
+  if (budgetCents <= 0) return 0;
+  return ((budgetCents - outflowCents) / budgetCents).clamp(-1.0, 1.0);
+}
+
 /// User-selected Home month, or `null` to follow the current calendar month.
 /// Set by the month-switcher chevrons; capped at the current month (no
 /// browsing into the future).

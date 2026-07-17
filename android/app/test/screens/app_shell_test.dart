@@ -8,6 +8,13 @@ import 'package:spendarr/router.dart';
 import 'package:spendarr/widgets/app_shell.dart';
 
 Future<void> _pump(WidgetTester tester, AppDatabase db) async {
+  // Budget never configured would otherwise pop the blocking first-run
+  // budget-setup dialog on Home, which isn't what this file tests.
+  final n = DateTime.now();
+  await db.syncMetaDao.put('budget_mode', 'constant');
+  await db.syncMetaDao
+      .put('budget_set_for_month', '${n.year}-${n.month.toString().padLeft(2, '0')}');
+
   await tester.pumpWidget(ProviderScope(
     overrides: [appDatabaseProvider.overrideWith((ref) => db)],
     child: MaterialApp.router(routerConfig: appRouter),

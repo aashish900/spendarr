@@ -19,7 +19,10 @@ class MonthRing extends StatelessWidget {
     this.size = 220,
   });
 
-  /// Fill fraction in `[0, 1]` — see `ringProgress` in providers/summary.dart.
+  /// Signed fill fraction in `[-1, 1]` — see `budgetRingProgress` in
+  /// providers/summary.dart. Positive fills gold clockwise from the top
+  /// (money still within budget); negative fills red counter-clockwise from
+  /// the top (overspent, magnitude = overspend / budget).
   final double progress;
   /// The big bold figure, e.g. "₹5,180" — only this is bold, per the
   /// mockup. Shrinks to fit the ring via [FittedBox] instead of overflowing.
@@ -173,6 +176,38 @@ class _RingPainter extends CustomPainter {
         _strokeWidth / 2,
         Paint()..color = _ringColorAt(progress),
       );
+    } else if (progress < 0) {
+      // Overspent: fill red in the opposite direction from the same
+      // top start point. `Canvas.drawArc` accepts a negative sweep angle
+      // directly, so a negative `progress` just draws counter-clockwise —
+      // no separate geometry needed.
+      const startAngle = -1.5707963267948966; // -90deg, clock-top start
+      const tau = 6.283185307179586; // 2*pi
+      final sweepAngle = tau * progress; // negative
+
+      final glow = Paint()
+        ..color = kExpenseRed.withValues(alpha: 0.10)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _strokeWidth + 14
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18);
+      canvas.drawArc(rect, startAngle, sweepAngle, false, glow);
+
+      final arc = Paint()
+        ..color = kExpenseRed
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _strokeWidth
+        ..strokeCap = StrokeCap.butt;
+      canvas.drawArc(rect, startAngle, sweepAngle, false, arc);
+
+      Offset onRing(double angle) => Offset(
+            center.dx + radius * math.cos(angle),
+            center.dy + radius * math.sin(angle),
+          );
+      final capPaint = Paint()..color = kExpenseRed;
+      canvas.drawCircle(onRing(startAngle), _strokeWidth / 2, capPaint);
+      canvas.drawCircle(
+          onRing(startAngle + sweepAngle), _strokeWidth / 2, capPaint);
     }
   }
 

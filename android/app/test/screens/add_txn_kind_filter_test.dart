@@ -26,6 +26,15 @@ Future<void> _seedCategory(
   ));
 }
 
+Future<void> _seedNoBudgetPrompt(AppDatabase db) async {
+  // Home would otherwise show its blocking first-run budget-setup dialog,
+  // which isn't what this file tests.
+  final n = DateTime.now();
+  await db.syncMetaDao.put('budget_mode', 'constant');
+  await db.syncMetaDao
+      .put('budget_set_for_month', '${n.year}-${n.month.toString().padLeft(2, '0')}');
+}
+
 void main() {
   // appRouter is a shared top-level singleton; reset its location after each
   // test so a test that navigates to /add (and never pops back) doesn't leak
@@ -37,6 +46,7 @@ void main() {
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    await _seedNoBudgetPrompt(db);
     tester.view.physicalSize = const Size(800, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -96,6 +106,7 @@ void main() {
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    await _seedNoBudgetPrompt(db);
     tester.view.physicalSize = const Size(800, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -136,6 +147,7 @@ void main() {
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    await _seedNoBudgetPrompt(db);
     tester.view.physicalSize = const Size(800, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -176,6 +188,7 @@ void main() {
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    await _seedNoBudgetPrompt(db);
     tester.view.physicalSize = const Size(800, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -230,6 +243,7 @@ void main() {
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    await _seedNoBudgetPrompt(db);
     tester.view.physicalSize = const Size(800, 2200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);

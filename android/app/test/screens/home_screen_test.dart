@@ -7,17 +7,35 @@ import 'package:spendarr/db/database.dart';
 import 'package:spendarr/db/database_provider.dart';
 import 'package:spendarr/db/tables.dart';
 import 'package:spendarr/providers/clock.dart';
+import 'package:spendarr/providers/profile.dart';
 import 'package:spendarr/router.dart';
 import 'package:spendarr/theme.dart';
 import 'package:spendarr/widgets/home_timeline.dart';
 import 'package:spendarr/widgets/kind_pill_selector.dart';
 import 'package:spendarr/widgets/month_ring.dart';
 
+/// `"yyyy-MM"` for the real wall-clock month — `HomeScreen`'s budget-prompt
+/// check always uses real time (`localDayTickProvider`), never the
+/// `nowProvider` override tests use to pin the greeting.
+String _currentYyyymm() {
+  final n = DateTime.now();
+  return '${n.year}-${n.month.toString().padLeft(2, '0')}';
+}
+
 Future<void> _pump(
   WidgetTester tester,
   AppDatabase db, {
   DateTime Function()? now,
+  // Defaults to a constant budget "already set up this month" so the
+  // blocking budget-prompt dialog doesn't pop up and swallow every
+  // unrelated test's interactions. Tests that specifically exercise the
+  // prompt pass `seedBudget: false`.
+  bool seedBudget = true,
 }) async {
+  if (seedBudget) {
+    await db.syncMetaDao.put('budget_mode', 'constant');
+    await db.syncMetaDao.put('budget_set_for_month', _currentYyyymm());
+  }
   // The Home screen's ring/stats/chips now occupy most of the default
   // 600px test viewport, pushing ledger rows past ListView's cacheExtent
   // (a plain ListView is sliver-backed and only materializes children
@@ -120,13 +138,13 @@ void main() {
     // "+₹5,000" matches 2x: the ledger row (income) + that date's own
     // day-summary header (income total for the day, same single txn).
     expect(find.text('+₹5,000'), findsNWidgets(2));
-    // ₹12.34 matches 2x: Expense stat + Expenses chip.
-    expect(find.text('₹12.34'), findsNWidgets(2));
+    // ₹12.34 matches 3x: ring amount (no budget configured → shows total
+    // spend) + Expense stat + Expenses chip.
+    expect(find.text('₹12.34'), findsNWidgets(3));
     // "−₹12.34" matches 2x: the ledger row (expense) + that date's own
     // day-summary header (expense total for the day, same single txn).
     expect(find.text('−₹12.34'), findsNWidgets(2));
-    // Ring amount = income − expenses − investments.
-    expect(find.text('₹4,987.66'), findsOneWidget);
+    expect(find.text('spent'), findsOneWidget); // ring descriptor
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
@@ -565,7 +583,7 @@ void main() {
   });
 
   testWidgets(
-      'month ring: centre shows income − expenses − investments "left to spend"',
+      'month ring: centre shows budget − expenses − investments "left to spend"',
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
@@ -605,7 +623,7 @@ void main() {
         occurredAtMs: todayNoon);
     await _seedTxn(db,
         id: 't2',
-        amount: 600000, // ₹6,000 income
+        amount: 600000, // ₹6,000 income (doesn't affect the budget ring)
         kind: TransactionKind.income,
         categoryId: 'c2',
         occurredAtMs: todayNoon);
@@ -618,21 +636,21 @@ void main() {
 
     await _pump(tester, db);
 
-    // 6,000 − 4,820 − 1,000 = ₹180 left.
-    expect(find.text('₹180'), findsOneWidget); // ring amount (bold)
+    // Budget ₹10,000 − (4,820 + 1,000) outflow = ₹4,180 left.
+    expect(find.text('₹4,180'), findsOneWidget); // ring amount (bold)
     expect(find.text('left to spend'), findsOneWidget); // descriptor
     final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
     expect(find.text('Day ${now.day}/$daysInMonth'), findsOneWidget);
 
-    // Fill = outflows / income: (4,820 + 1,000) / 6,000 = 0.97.
+    // Fill = remaining / budget: 4,180 / 10,000 = 0.418.
     final ring = tester.widget<MonthRing>(find.byType(MonthRing));
-    expect(ring.progress, closeTo(0.97, 0.0001));
+    expect(ring.progress, closeTo(0.418, 0.0001));
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('month ring: outflows beyond income show "overspent"',
+  testWidgets('month ring: outflows beyond budget show "overspent" in red',
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
@@ -647,36 +665,35 @@ void main() {
     ));
     await _seedTxn(db,
         id: 't1',
-        amount: 150000, // ₹1,500 expense, no income this month
+        amount: 150000, // ₹1,500 expense — ₹500 over the ₹1,000 budget
         kind: TransactionKind.expense,
         categoryId: 'c1',
         occurredAtMs: DateTime.now().toUtc().millisecondsSinceEpoch);
 
     await _pump(tester, db);
 
-    // ₹1,500 matches 3x: ring amount + Expense stat + Expenses chip.
-    expect(find.text('₹1,500'), findsNWidgets(3));
+    expect(find.text('₹500'), findsOneWidget); // ring amount: overspend
+    expect(find.text('₹1,500'), findsNWidgets(2)); // Expense stat + chip
     expect(find.text('overspent'), findsOneWidget); // descriptor
     final ring = tester.widget<MonthRing>(find.byType(MonthRing));
-    expect(ring.progress, 1.0); // outflows with no income → ring full
+    // Overspend ₹500 of a ₹1,000 budget → progress -0.5 (half-red).
+    expect(ring.progress, closeTo(-0.5, 0.0001));
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
   });
 
-  testWidgets('month ring: empty month → ₹0 left, empty ring, no hint',
+  testWidgets('month ring: no budget configured → blank ring, shows spend',
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
+    await db.syncMetaDao.put('monthly_budget_cents', '0');
 
     await _pump(tester, db);
 
-    expect(find.text('left to spend'), findsOneWidget); // descriptor
-    // The budget-driven "Set a budget" hint is gone — the ring fills from
-    // outflows vs income now, no setup required.
-    expect(find.text('Set a budget'), findsNothing);
+    expect(find.text('spent'), findsOneWidget); // descriptor
     final ring = tester.widget<MonthRing>(find.byType(MonthRing));
-    expect(ring.progress, 0);
+    expect(ring.progress, 0); // blank ring — no budget to measure against
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
@@ -717,7 +734,7 @@ void main() {
         occurredAtMs: lastMonthNoon);
     await _seedTxn(db,
         id: 't2',
-        amount: 300000, // ₹3,000 income
+        amount: 300000, // ₹3,000 income (doesn't affect the budget ring)
         kind: TransactionKind.income,
         categoryId: 'c2',
         occurredAtMs: lastMonthNoon);
@@ -727,8 +744,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    // 3,000 − 1,000 = ₹2,000 left over.
-    expect(find.text('₹2,000'), findsOneWidget); // ring amount (bold)
+    // Budget ₹10,000 − ₹1,000 expense = ₹9,000 left over.
+    expect(find.text('₹9,000'), findsOneWidget); // ring amount (bold)
     expect(find.text('left over'), findsOneWidget); // past-month descriptor
     expect(find.text('left to spend'), findsNothing);
     expect(find.textContaining('Day '), findsNothing);
@@ -875,12 +892,63 @@ void main() {
     // total outflow (expense + investment), not the expense-only figure.
     expect(find.text('₹300'), findsOneWidget);
     // ₹2,300 matches twice: ring amount + Expense stat (expense + investment
-    // = income − expenses − investments = −₹2,300 → "₹2,300 overspent").
+    // outflow; no budget configured → ring just shows total spend, "spent").
     expect(find.text('₹2,300'), findsNWidgets(2));
     // ₹2,000 matches twice: the ledger row (unsigned, investment) + the
     // Investments summary chip.
     expect(find.text('₹2,000'), findsNWidgets(2));
     expect(find.text('₹649'), findsOneWidget); // Recurring chip (projected)
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets(
+      'summary chips: recurring projection excludes income rules (outflows only)',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await db.categoriesDao.upsertCategory(CategoriesCompanion.insert(
+      id: 'c1',
+      name: 'Food',
+      emoji: '🍔',
+      kind: TransactionKind.expense,
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    await db.categoriesDao.upsertCategory(CategoriesCompanion.insert(
+      id: 'c2',
+      name: 'Salary',
+      emoji: '💼',
+      kind: TransactionKind.income,
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    // Expense rule (₹649 projected) + an income rule (₹50,000 salary) — the
+    // Recurring chip should only reflect the expense rule.
+    await db.recurringDao.upsertRule(RecurringRulesCompanion.insert(
+      id: 'r1',
+      categoryId: 'c1',
+      amount: 64900,
+      kind: TransactionKind.expense,
+      cron: '0 0 1 * *',
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+    await db.recurringDao.upsertRule(RecurringRulesCompanion.insert(
+      id: 'r2',
+      categoryId: 'c2',
+      amount: 5000000,
+      kind: TransactionKind.income,
+      cron: '0 0 1 * *',
+      createdAt: 0,
+      updatedAt: 0,
+    ));
+
+    await _pump(tester, db);
+
+    expect(find.text('₹649'), findsOneWidget); // Recurring chip
+    expect(find.text('₹50,000'), findsNothing); // income rule excluded
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
@@ -1051,6 +1119,87 @@ void main() {
     final context = tester.element(find.text('SIP'));
     final bodyMediumSize = Theme.of(context).textTheme.bodyMedium?.fontSize;
     expect(amountText.style?.fontSize, bodyMediumSize);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets(
+      'budget prompt: first run (never configured) blocks Home with a setup dialog',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await _pump(tester, db, seedBudget: false);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Set up your budget'), findsOneWidget);
+    // Blocking: no Cancel button, and tapping the barrier doesn't dismiss it.
+    expect(find.text('Cancel'), findsNothing);
+    await tester.tapAt(const Offset(10, 10)); // outside the dialog card
+    await tester.pump();
+    expect(find.text('Set up your budget'), findsOneWidget);
+
+    // Saving persists the value and mode, and the dialog closes.
+    await tester.enterText(find.byType(TextField).first, '15000');
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Set up your budget'), findsNothing);
+    final container = ProviderScope.containerOf(
+        tester.element(find.byType(MonthRing)));
+    final profile = container.read(profileProvider).value!;
+    expect(profile.monthlyBudgetCents, 1500000);
+    expect(profile.budgetMode, BudgetMode.constant);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets(
+      'budget prompt: monthly mode re-prompts once a new month has started',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await db.syncMetaDao.put('monthly_budget_cents', '1000000');
+    await db.syncMetaDao.put('budget_mode', 'monthly');
+    await db.syncMetaDao.put('budget_set_for_month', '2000-01'); // long stale
+
+    await _pump(tester, db, seedBudget: false);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text("Set this month's budget"), findsOneWidget);
+    // The mode is already fixed — no mode picker on the re-prompt.
+    expect(find.text('Every month is the same'), findsNothing);
+    // Prefilled with the previous budget value (₹10,000).
+    final field = tester.widget<TextField>(find.byType(TextField).first);
+    expect(field.controller?.text, '10000');
+
+    await tester.tap(find.text('Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text("Set this month's budget"), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 5));
+  });
+
+  testWidgets(
+      'budget prompt: constant mode never re-prompts, even in a stale month',
+      (tester) async {
+    final db = AppDatabase(NativeDatabase.memory());
+    addTearDown(db.close);
+    await db.syncMetaDao.put('monthly_budget_cents', '1000000');
+    await db.syncMetaDao.put('budget_mode', 'constant');
+    await db.syncMetaDao.put('budget_set_for_month', '2000-01'); // long stale
+
+    await _pump(tester, db, seedBudget: false);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Set up your budget'), findsNothing);
+    expect(find.text("Set this month's budget"), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));

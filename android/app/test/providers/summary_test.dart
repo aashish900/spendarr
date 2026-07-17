@@ -155,6 +155,30 @@ void main() {
     });
   });
 
+  group('budgetRingProgress', () {
+    test('no budget configured → 0 (blank ring)', () {
+      expect(budgetRingProgress(0, 5000), 0);
+      expect(budgetRingProgress(0, 0), 0);
+    });
+
+    test('zero spend against a budget → full (1)', () {
+      expect(budgetRingProgress(10000, 0), 1);
+    });
+
+    test('half the budget spent → 0.5', () {
+      expect(budgetRingProgress(10000, 5000), 0.5);
+    });
+
+    test('overspending drains past zero into negative (red) territory', () {
+      expect(budgetRingProgress(10000, 12000), closeTo(-0.2, 0.0001));
+    });
+
+    test('overspend by the full budget clamps at -1', () {
+      expect(budgetRingProgress(10000, 20000), -1);
+      expect(budgetRingProgress(10000, 50000), -1); // clamped, not -4
+    });
+  });
+
   group('range query over seeded drift rows', () {
     late AppDatabase db;
     setUp(() => db = AppDatabase(NativeDatabase.memory()));
