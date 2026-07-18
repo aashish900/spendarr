@@ -98,6 +98,18 @@ Polish update:
 No accounts, no ads, no data collection. Your data stays on your device.
 ```
 
+### v0.1.4 (max 500 characters)
+
+```
+Polish update:
+
+• Home summary now shows Income, Expenses, and Balance instead of Expenses/Investments/Recurring
+• Categories screen now shows a 3-column grid instead of one row per category
+• Cleaner month-ring layout: income and expense figures moved below the ring
+
+No accounts, no ads, no data collection. Your data stays on your device.
+```
+
 ---
 
 ## Submission checklist (things this file doesn't cover)

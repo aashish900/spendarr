@@ -3,23 +3,22 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../util/money.dart';
 
-/// The Expenses / Investments / Recurring strip below the month ring, drawn
-/// as one bordered card with an icon bubble per section (matches the
-/// mockup) rather than three separate chips. Expenses/Investments are
-/// actuals for the displayed month; Recurring is a **projected** total for
-/// active rules — v1 doesn't execute rules, so a "spent so far" figure
-/// would always read ₹0; see DECISIONLOG.
+/// The Income / Expenses / Balance strip below the month ring, drawn as one
+/// bordered card with an icon bubble per section (matches the mockup)
+/// rather than three separate chips. Reuses the existing icon assets rather
+/// than sourcing new ones: `investment.png` for Income, `expenses.png` for
+/// Expenses (unchanged), `recurring.png` for Balance.
 class SummaryChips extends StatelessWidget {
   const SummaryChips({
     super.key,
+    required this.incomeCents,
     required this.expenseCents,
-    required this.investmentCents,
-    required this.recurringProjectedCents,
+    required this.balanceCents,
   });
 
+  final int incomeCents;
   final int expenseCents;
-  final int investmentCents;
-  final int recurringProjectedCents;
+  final int balanceCents;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +33,14 @@ class SummaryChips extends StatelessWidget {
         children: [
           Expanded(
             child: _Item(
+              iconAsset: 'assets/icons/investment.png',
+              label: 'Income',
+              valueCents: incomeCents,
+            ),
+          ),
+          _divider(),
+          Expanded(
+            child: _Item(
               iconAsset: 'assets/icons/expenses.png',
               label: 'Expenses',
               valueCents: expenseCents,
@@ -42,17 +49,9 @@ class SummaryChips extends StatelessWidget {
           _divider(),
           Expanded(
             child: _Item(
-              iconAsset: 'assets/icons/investment.png',
-              label: 'Investments',
-              valueCents: investmentCents,
-            ),
-          ),
-          _divider(),
-          Expanded(
-            child: _Item(
               iconAsset: 'assets/icons/recurring.png',
-              label: 'Recurring',
-              valueCents: recurringProjectedCents,
+              label: 'Balance',
+              valueCents: balanceCents,
             ),
           ),
         ],

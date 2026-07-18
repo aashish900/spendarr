@@ -600,3 +600,21 @@ Iterative visual polish against the user's mockup (`spendarr home.png`) and thei
 - `lib/screens/add_recurring_screen.dart` — same `Column` → `ListView` + `ConstrainedBox` fix applied to its own `_pickCategory` sheet (same bug, same cause).
 - `test/screens/add_txn_kind_filter_test.dart` — added a regression test seeding 30 categories, confirming "＋ New category" isn't visible until the sheet is scrolled, and that scrolling and tapping it does reach the create-category form.
 - Gates: `flutter analyze` clean; `flutter test` 176/176 green (+1 new).
+
+## 2026-07-19 — Revert budget-based ring feature; Home ring layout: Income/Expense moved below the ring
+
+- Reverted commits `2920cca` (budget-based month ring, budget setup/monthly re-prompt, recurring-chip income exclusion) and `58f5782` (its v0.1.3 release notes) via `git revert`, back to the v0.1.2 baseline — the budget feature is no longer in `main`. The `v0.1.3` tag/GitHub Release still points at the reverted commit and was intentionally left in place (user declined cleanup).
+- `lib/screens/home_screen.dart` — Income/Expense stats no longer flank the month ring in narrow side columns (cramped, vertically centered against a 220px-tall ring with little room for wide amounts). The ring is now centered on its own row; Income/Expense sit in a separate full-width row directly below it, each getting the row's full width instead of a squeezed `Expanded` column.
+- Gates: `flutter analyze` clean; `flutter test` 176/176 green (no test asserted on the flanking layout specifically, so no test changes were needed).
+
+## 2026-07-19 — Home: colored Income/Expense text, then replaced with an Income/Expenses/Balance summary card
+
+- `lib/screens/home_screen.dart` — the Income/Expense row below the ring (added earlier the same day) briefly got `kIncomeGreen`/`kExpenseRed` text colors, then was removed entirely per a follow-up request: the standalone row is gone, along with the now-unused `_Stat` widget and `recurringProjectedCents` computation.
+- `lib/widgets/summary_chips.dart` — `SummaryChips` renamed from Expenses/Investments/Recurring to **Income/Expenses/Balance**, reusing the existing icon assets rather than sourcing new ones (`investment.png` → Income, `expenses.png` → Expenses unchanged, `recurring.png` → Balance). Balance = `PeriodSummary.netCents` (income − expenses, investments excluded, consistent with `netFlowCents`). Investment totals are no longer shown as a Home summary figure at all (still visible via History/Recurring elsewhere).
+- Gates: `flutter analyze` clean; `flutter test` 176/176 green. Updated assertions across `home_screen_test.dart`, `add_txn_flow_test.dart`, and `app_shell_test.dart` for the new chip labels/values — several needed widening from `findsOneWidget` to `findsNWidgets(2/3)` since the Balance chip's income−expense figure frequently coincides with the ring amount or a ledger row's signed amount in these tests' seed data.
+
+## 2026-07-19 — Categories screen: 3-column grid instead of one full-width row per category
+
+- `lib/screens/categories_screen.dart` — each kind group's categories were a single-column `ListTile` list, wasting most of the row's width on a short name. Replaced with a `GridView.builder` (`SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3)`, `shrinkWrap: true` + `NeverScrollableScrollPhysics` inside the outer `ListView`, same as the pattern used elsewhere for sheet-embedded grids). New `_CategoryTile` widget: icon + name centered in a bordered card (tap → edit), with the archive action as a small `IconButton` overlaid in the top-right corner via `Stack`/`Positioned` (was the `ListTile`'s trailing icon).
+- `test/screens/categories_grouping_test.dart` — the grid takes more vertical space per group than the old rows did, pushing the Investment group's header past the default 600px test viewport (only built lazily within the sliver's cache extent); added the same tall-virtual-window pattern already used in `home_screen_test.dart`.
+- Gates: `flutter analyze` clean; `flutter test` 176/176 green (no new tests — same text/interaction assertions, no new behavior).

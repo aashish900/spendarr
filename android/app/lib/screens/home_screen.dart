@@ -12,7 +12,6 @@ import '../providers/recurring.dart';
 import '../providers/summary.dart';
 import '../providers/transactions.dart' show localDayTickProvider;
 import '../theme.dart';
-import '../util/cron.dart';
 import '../util/datetime.dart';
 import '../util/money.dart';
 import '../widgets/gilded.dart';
@@ -92,10 +91,6 @@ class HomeScreen extends ConsumerWidget {
         month.year == currentDay.year && month.month == currentDay.month;
     final recurringRules =
         ref.watch(activeRecurringProvider).value ?? const <RecurringRule>[];
-    final recurringProjectedCents = [
-      for (final r in recurringRules)
-        occurrencesInMonth(r.cron, month.year, month.month) * r.amount,
-    ].fold<int>(0, (a, b) => a + b);
     final categories = categoriesAsync.value ?? const <Category>[];
     final categoriesById = {for (final c in categories) c.id: c};
     final renewalFact = upcomingRenewal(recurringRules, categoriesById, now);
@@ -157,53 +152,36 @@ class HomeScreen extends ConsumerWidget {
                     // clear of the FAB instead of sitting underneath it.
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: _Stat(
-                                label: 'Income',
-                                valueCents: summary.incomeCents,
-                                alignEnd: false),
+                      Center(
+                        child: GestureDetector(
+                          // Swipe the ring itself to browse months — same
+                          // effect as the header's prev/next arrows, just
+                          // faster for flicking through several months of
+                          // past transactions.
+                          onHorizontalDragEnd: (details) {
+                            final velocity = details.primaryVelocity ?? 0;
+                            if (velocity < 0) {
+                              if (canGoForward) goToMonth(1);
+                            } else if (velocity > 0) {
+                              goToMonth(-1);
+                            }
+                          },
+                          child: MonthRing(
+                            progress: ringProgress(
+                                outflowCents, summary.incomeCents),
+                            amountText: amountText,
+                            descriptor: descriptor,
+                            footer: footer,
                           ),
-                          GestureDetector(
-                            // Swipe the ring itself to browse months — same
-                            // effect as the header's prev/next arrows, just
-                            // faster for flicking through several months of
-                            // past transactions.
-                            onHorizontalDragEnd: (details) {
-                              final velocity =
-                                  details.primaryVelocity ?? 0;
-                              if (velocity < 0) {
-                                if (canGoForward) goToMonth(1);
-                              } else if (velocity > 0) {
-                                goToMonth(-1);
-                              }
-                            },
-                            child: MonthRing(
-                              progress: ringProgress(
-                                  outflowCents, summary.incomeCents),
-                              amountText: amountText,
-                              descriptor: descriptor,
-                              footer: footer,
-                            ),
-                          ),
-                          Expanded(
-                            child: _Stat(
-                                // Total outflow (expenses + investments), not
-                                // expenses alone — matches what the ring's
-                                // fill fraction is measured against.
-                                label: 'Expense',
-                                valueCents: outflowCents,
-                                alignEnd: true),
-                          ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 16),
                       SummaryChips(
+                        incomeCents: summary.incomeCents,
                         expenseCents: summary.expenseCents,
-                        investmentCents: summary.investmentCents,
-                        recurringProjectedCents: recurringProjectedCents,
+                        // Net excludes investments, consistent with
+                        // `PeriodSummary.netCents`/`netFlowCents`.
+                        balanceCents: summary.netCents,
                       ),
                       const SizedBox(height: 24),
                       HomeTimeline(
@@ -225,40 +203,6 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.label,
-    required this.valueCents,
-    required this.alignEnd,
-  });
-
-  final String label;
-  final int valueCents;
-  final bool alignEnd;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-        // Shrinks to fit rather than wrapping to a second line when the
-        // amount is wide (large totals, e.g. once investments are folded
-        // into the Expense figure).
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
-          child: Text(formatRupees(valueCents),
-              maxLines: 1,
-              softWrap: false,
-              style: Theme.of(context).textTheme.titleMedium),
-        ),
-      ],
     );
   }
 }

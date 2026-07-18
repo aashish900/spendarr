@@ -40,10 +40,9 @@ void main() {
     await tester.pump(); // first frame
     await tester.pump(const Duration(milliseconds: 200)); // drift stream emits
 
-    // Home starts at income/expense/chips/ring all ₹0 (current month, no
-    // txns, no budget set): ring amount, Income stat, Expense stat,
-    // Expenses/Investments/Recurring chips.
-    expect(find.text('₹0'), findsNWidgets(6));
+    // Home starts at ₹0 everywhere (current month, no txns): ring amount,
+    // Income/Expenses/Balance chips.
+    expect(find.text('₹0'), findsNWidgets(4));
 
     // FAB → kind-picker sheet → Add screen.
     await tester.tap(find.byType(FloatingActionButton));
@@ -64,11 +63,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400)); // pop transition + stream update
 
     // Popped back to Home; the new expense shows up on the ring amount
-    // (no budget set), the Expense stat, the Expenses chip, and the ledger row.
+    // (no budget set), the Expenses chip, and the ledger row.
     expect(find.text('Add Transaction'), findsNothing);
-    expect(find.text('₹12.34'), findsNWidgets(3)); // ring + Expense stat + chip
-    // ledger row + that date's own day-summary header (same single txn).
-    expect(find.text('−₹12.34'), findsNWidgets(2));
+    expect(find.text('₹12.34'), findsNWidgets(2)); // ring + Expenses chip
+    // ledger row + that date's own day-summary header (same single txn) +
+    // the Balance chip (income 0 − expense 12.34, signed the same way).
+    expect(find.text('−₹12.34'), findsNWidgets(3));
 
     // Outbox got the mutation.
     final outbox = await db.outboxDao.queue();

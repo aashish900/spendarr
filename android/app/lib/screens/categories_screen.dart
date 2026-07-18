@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../db/database.dart';
 import '../db/tables.dart';
 import '../providers/categories.dart';
+import '../theme.dart';
 import '../widgets/category_icon_bubble.dart';
 import '../widgets/gilded.dart';
 import '../widgets/gold_fab.dart';
@@ -15,7 +16,8 @@ String kindLabel(TransactionKind kind) => switch (kind) {
       TransactionKind.investment => 'Investment',
     };
 
-/// Categories: list of non-archived categories with an archive action.
+/// Categories: grid of non-archived categories (3 per row) with an archive
+/// action, grouped and segregated by kind.
 class CategoriesScreen extends ConsumerWidget {
   const CategoriesScreen({super.key});
 
@@ -60,25 +62,100 @@ class CategoriesScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  for (final c in group)
-                    ListTile(
-                      leading: CategoryIconBubble(c.emoji, size: 36),
-                      title: Text(c.name),
-                      onTap: () =>
-                          context.push('/categories/add?editCategoryId=${c.id}'),
-                      trailing: IconButton(
-                        icon: Gilded(
-                            child: const Icon(Icons.archive_outlined,
-                                color: Colors.white)),
-                        tooltip: 'Archive',
-                        onPressed: () =>
-                            ref.read(categoryWriterProvider).archive(c.id),
-                      ),
+                  // A single-column ListTile per category wasted most of
+                  // the row's width on a short name — 3 columns fit far
+                  // more categories on screen without scrolling.
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.85,
                     ),
+                    itemCount: group.length,
+                    itemBuilder: (context, i) {
+                      final c = group[i];
+                      return _CategoryTile(
+                        category: c,
+                        onTap: () => context
+                            .push('/categories/add?editCategoryId=${c.id}'),
+                        onArchive: () =>
+                            ref.read(categoryWriterProvider).archive(c.id),
+                      );
+                    },
+                  ),
                 ],
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _CategoryTile extends StatelessWidget {
+  const _CategoryTile({
+    required this.category,
+    required this.onTap,
+    required this.onArchive,
+  });
+
+  final Category category;
+  final VoidCallback onTap;
+  final VoidCallback onArchive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: kSurfaceBlack,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: kCardBorder),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CategoryIconBubble(category.emoji, size: 40),
+                  const SizedBox(height: 8),
+                  Text(
+                    category.name,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: -8,
+            right: -8,
+            child: IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: Gilded(
+                child: const Icon(Icons.archive_outlined,
+                    size: 18, color: Colors.white),
+              ),
+              tooltip: 'Archive',
+              onPressed: onArchive,
+            ),
+          ),
+        ],
       ),
     );
   }

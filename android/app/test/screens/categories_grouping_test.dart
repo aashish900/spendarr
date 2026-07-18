@@ -31,6 +31,15 @@ Future<void> _pump(WidgetTester tester, AppDatabase db) async {
       GoRoute(path: '/categories', builder: (_, _) => const CategoriesScreen()),
     ],
   );
+  // The 3-column category grid takes noticeably more vertical space per
+  // group than the old single-column ListTile rows did — a tall virtual
+  // window so every kind group (and its header) is built by the outer
+  // ListView's sliver instead of sitting beyond the default 600px viewport.
+  tester.view.physicalSize = const Size(800, 1600);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
   await tester.pumpWidget(ProviderScope(
     overrides: [appDatabaseProvider.overrideWith((ref) => db)],
     child: MaterialApp.router(routerConfig: router),

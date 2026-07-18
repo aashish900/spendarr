@@ -27,8 +27,7 @@ void main() {
     expect(find.text('Home'), findsOneWidget); // nav label
     expect(find.text('History'), findsOneWidget);
     expect(find.text('Categories'), findsOneWidget);
-    // "Recurring" matches twice: the nav label + the Recurring summary chip.
-    expect(find.text('Recurring'), findsNWidgets(2));
+    expect(find.text('Recurring'), findsOneWidget); // nav label only now
     expect(find.text('Settings'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
