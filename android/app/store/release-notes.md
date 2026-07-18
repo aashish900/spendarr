@@ -98,20 +98,6 @@ Polish update:
 No accounts, no ads, no data collection. Your data stays on your device.
 ```
 
-### v0.1.3 (max 500 characters)
-
-```
-Budget update:
-
-• Set a monthly budget — the home ring now tracks it, not your income
-• Overspend and the ring fills red so you can see it at a glance
-• Choose a budget that stays the same each month, or set a new one every month
-• Edit your budget any time from Settings
-• Recurring total on Home no longer counts income rules like salary
-
-No accounts, no ads, no data collection. Your data stays on your device.
-```
-
 ---
 
 ## Submission checklist (things this file doesn't cover)
