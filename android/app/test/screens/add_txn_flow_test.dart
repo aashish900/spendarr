@@ -10,21 +10,11 @@ import 'package:spendarr/router.dart';
 import 'package:spendarr/util/datetime.dart';
 import 'package:spendarr/widgets/kind_pill_selector.dart';
 
-Future<void> _seedNoBudgetPrompt(AppDatabase db) async {
-  // Home would otherwise show its blocking first-run budget-setup dialog,
-  // which isn't what this file tests.
-  final n = DateTime.now();
-  await db.syncMetaDao.put('budget_mode', 'constant');
-  await db.syncMetaDao
-      .put('budget_set_for_month', '${n.year}-${n.month.toString().padLeft(2, '0')}');
-}
-
 void main() {
   testWidgets('add a transaction → Today net flow updates reactively',
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    await _seedNoBudgetPrompt(db);
     await db.categoriesDao.upsertCategory(CategoriesCompanion.insert(
       id: 'c1',
       name: 'Food',
@@ -96,7 +86,6 @@ void main() {
       (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    await _seedNoBudgetPrompt(db);
 
     await tester.pumpWidget(ProviderScope(
       overrides: [appDatabaseProvider.overrideWith((ref) => db)],
@@ -126,7 +115,6 @@ void main() {
   testWidgets('/add?kind=income pre-selects the Income kind', (tester) async {
     final db = AppDatabase(NativeDatabase.memory());
     addTearDown(db.close);
-    await _seedNoBudgetPrompt(db);
 
     await tester.pumpWidget(ProviderScope(
       overrides: [appDatabaseProvider.overrideWith((ref) => db)],
