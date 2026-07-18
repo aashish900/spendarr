@@ -14,6 +14,7 @@ import '../util/datetime.dart' as dt;
 import '../util/money.dart';
 import '../widgets/category_form.dart';
 import '../widgets/category_icon_bubble.dart';
+import '../widgets/category_picker_tile.dart';
 import '../widgets/field_card.dart';
 import '../widgets/gilded.dart';
 import '../widgets/kind_pill_selector.dart';
@@ -191,18 +192,24 @@ class _AddTxnScreenState extends ConsumerState<AddTxnScreen> {
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
           ),
-          child: ListView(
+          child: GridView.count(
             shrinkWrap: true,
+            padding: const EdgeInsets.all(16),
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.85,
             children: [
               for (final c in categories)
-                ListTile(
-                  leading: CategoryIconBubble(c.emoji, size: 32),
-                  title: Text(c.name),
+                CategoryPickerTile(
+                  icon: CategoryIconBubble(c.emoji, size: 32),
+                  label: c.name,
                   onTap: () => Navigator.of(sheetContext).pop(c.id),
                 ),
-              ListTile(
-                leading: Gilded(child: const Icon(Icons.add, color: Colors.white)),
-                title: const Text('＋ New category'),
+              CategoryPickerTile(
+                icon: Gilded(
+                    child: const Icon(Icons.add, color: Colors.white, size: 32)),
+                label: '＋ New category',
                 onTap: () => Navigator.of(sheetContext).pop(_newCategoryValue),
               ),
             ],

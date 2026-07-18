@@ -7,6 +7,7 @@ import 'package:spendarr/db/database.dart';
 import 'package:spendarr/db/database_provider.dart';
 import 'package:spendarr/db/tables.dart';
 import 'package:spendarr/router.dart';
+import 'package:spendarr/widgets/category_picker_tile.dart';
 import 'package:spendarr/widgets/kind_pill_selector.dart';
 
 Future<void> _seedCategory(
@@ -210,12 +211,12 @@ void main() {
     await tester.tap(find.text('Food'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300)); // sheet open
-    expect(find.widgetWithText(ListTile, 'Food'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Snacks'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Salary'), findsNothing);
+    expect(find.widgetWithText(CategoryPickerTile, 'Food'), findsOneWidget);
+    expect(find.widgetWithText(CategoryPickerTile, 'Snacks'), findsOneWidget);
+    expect(find.widgetWithText(CategoryPickerTile, 'Salary'), findsNothing);
 
     // Tapping Snacks selects it and closes the sheet.
-    await tester.tap(find.widgetWithText(ListTile, 'Snacks'));
+    await tester.tap(find.widgetWithText(CategoryPickerTile, 'Snacks'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300)); // sheet close
     expect(find.text('Snacks'), findsOneWidget);
@@ -264,10 +265,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300)); // sheet open
 
-    // "New category" isn't visible yet (30 rows don't fit on screen), but
-    // scrolling the sheet's ListView down reaches it.
+    // "New category" isn't visible yet (30 tiles don't fit on screen), but
+    // scrolling the sheet's grid down reaches it.
     expect(find.text('＋ New category'), findsNothing);
-    await tester.drag(find.byType(ListView).last, const Offset(0, -3000));
+    await tester.drag(find.byType(GridView).last, const Offset(0, -3000));
     await tester.pump();
     expect(find.text('＋ New category'), findsOneWidget);
 

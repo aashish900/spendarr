@@ -178,10 +178,9 @@ class HomeScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       SummaryChips(
                         incomeCents: summary.incomeCents,
-                        expenseCents: summary.expenseCents,
-                        // Net excludes investments, consistent with
-                        // `PeriodSummary.netCents`/`netFlowCents`.
-                        balanceCents: summary.netCents,
+                        // Expenses folds in investments — same outflow
+                        // figure the ring itself is measured against.
+                        expenseCents: outflowCents,
                       ),
                       const SizedBox(height: 24),
                       HomeTimeline(

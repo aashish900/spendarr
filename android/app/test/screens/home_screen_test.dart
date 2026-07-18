@@ -124,10 +124,8 @@ void main() {
     // "−₹12.34" matches 2x: the ledger row (expense) + that date's own
     // day-summary header (expense total for the day, same single txn).
     expect(find.text('−₹12.34'), findsNWidgets(2));
-    // Ring amount = income − expenses − investments; the Balance chip
-    // (income − expenses, no investments here) happens to equal the same
-    // figure with this seed data.
-    expect(find.text('₹4,987.66'), findsNWidgets(2));
+    // Ring amount = income − expenses − investments.
+    expect(find.text('₹4,987.66'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 5));
@@ -728,9 +726,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    // 3,000 − 1,000 = ₹2,000 left over. The Balance chip (income − expenses
-    // for the same browsed month) shows the same figure.
-    expect(find.text('₹2,000'), findsNWidgets(2));
+    // 3,000 − 1,000 = ₹2,000 left over.
+    expect(find.text('₹2,000'), findsOneWidget);
     expect(find.text('left over'), findsOneWidget); // past-month descriptor
     expect(find.text('left to spend'), findsNothing);
     expect(find.textContaining('Day '), findsNothing);
@@ -853,7 +850,7 @@ void main() {
             DateTime(now.year, now.month, now.day, 12).toUtc().millisecondsSinceEpoch);
     await _seedTxn(db,
         id: 't2',
-        amount: 200000, // ₹2,000 investment — not folded into Expenses/Balance
+        amount: 200000, // ₹2,000 investment — folded into the Expenses chip
         kind: TransactionKind.investment,
         categoryId: 'c2',
         occurredAtMs:
@@ -862,12 +859,13 @@ void main() {
     await _pump(tester, db);
 
     expect(find.text('₹0'), findsOneWidget); // Income chip: no income seeded
-    expect(find.text('₹300'), findsOneWidget); // Expenses chip
-    // Balance = income − expenses (investments excluded), signed: 0 − 300.
-    // Matches 2x: the Balance chip + the ledger row for the expense txn
-    // itself (same signed figure).
-    expect(find.text('−₹300'), findsNWidgets(2));
-    // Investment isn't its own chip anymore — only shows in the ledger row.
+    // Expenses chip folds in investments too (300 + 2,000 = 2,300); matches
+    // 2x: the Expenses chip + the ring amount (income 0 − outflow 2,300 →
+    // "₹2,300 overspent").
+    expect(find.text('₹2,300'), findsNWidgets(2));
+    expect(find.text('−₹300'), findsOneWidget); // ledger row: the expense txn
+    // ₹2,000 isn't folded/signed anywhere else — only the investment
+    // ledger row shows it, unsigned.
     expect(find.text('₹2,000'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());

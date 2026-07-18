@@ -124,6 +124,17 @@ Polish update:
 No accounts, no ads, no data collection. Your data stays on your device.
 ```
 
+### v0.1.5 (max 500 characters)
+
+```
+Polish update:
+
+• Home summary card simplified to Income and Expenses (investments now count as an expense)
+• Category picker (when adding a transaction) is now a 3-column grid, not one row per category
+
+No accounts, no ads, no data collection. Your data stays on your device.
+```
+
 ---
 
 ## Submission checklist (things this file doesn't cover)

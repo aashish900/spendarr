@@ -3,22 +3,21 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../util/money.dart';
 
-/// The Income / Expenses / Balance strip below the month ring, drawn as one
-/// bordered card with an icon bubble per section (matches the mockup)
-/// rather than three separate chips. Reuses the existing icon assets rather
-/// than sourcing new ones: `investment.png` for Income, `expenses.png` for
-/// Expenses (unchanged), `recurring.png` for Balance.
+/// The Income / Expenses strip below the month ring, drawn as one bordered
+/// card with an icon bubble per section (matches the mockup) rather than
+/// two separate chips. Reuses the existing icon assets rather than sourcing
+/// new ones: `investment.png` for Income, `expenses.png` for Expenses.
+/// Expenses folds in investments too — outflow is outflow regardless of
+/// kind, and this card no longer breaks that split out separately.
 class SummaryChips extends StatelessWidget {
   const SummaryChips({
     super.key,
     required this.incomeCents,
     required this.expenseCents,
-    required this.balanceCents,
   });
 
   final int incomeCents;
   final int expenseCents;
-  final int balanceCents;
 
   @override
   Widget build(BuildContext context) {
@@ -44,14 +43,6 @@ class SummaryChips extends StatelessWidget {
               iconAsset: 'assets/icons/expenses.png',
               label: 'Expenses',
               valueCents: expenseCents,
-            ),
-          ),
-          _divider(),
-          Expanded(
-            child: _Item(
-              iconAsset: 'assets/icons/recurring.png',
-              label: 'Balance',
-              valueCents: balanceCents,
             ),
           ),
         ],
